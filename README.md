@@ -5,4 +5,4 @@ repositório usado na disciplina de compiladores para o projeto de um compilador
 Emerson Paulo Pinheiro Muniz
 
 # Linguagem utilizada
-JavaScript
+C++
