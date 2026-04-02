@@ -1,6 +1,6 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
-#include "JackTockenizer.h"
+#include "JackTokenizer.h"
 
 std::string TEST = "test_codigo.jack";
 

@@ -4,7 +4,7 @@
 #include <vector> // Inclui a biblioteca que permite trabalhar com vetores
 
 //! Primeiramente cria a lista de tokens que serão utilizados
-enum TokenType {
+enum TokenTypeList {
   KEYWORD,
   SYMBOL,
   IDENTIFIER,
