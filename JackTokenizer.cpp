@@ -2,6 +2,7 @@
 #include <fstream> //Biblioteca que le o arquivo
 #include <sstream> //Biblioteca que manipula blocos de texto 
 
+//Construtor da classe JackTokenizer
 JackTokenizer::JackTokenizer(std::string filename){
   std::ifstream file(filename); //Abre o arquivo
 
@@ -15,7 +16,8 @@ JackTokenizer::JackTokenizer(std::string filename){
   }
 }
 
+
+
 //Função de teste
-std::string JackTokenizer::getCode(){
-  return input_code; //Retorna o conteudo do arquivo
-}
+std::string JackTokenizer::getCode(){return input_code;} //Retorna o conteudo do arquivo
+
