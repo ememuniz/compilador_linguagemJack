@@ -13,3 +13,11 @@ enum TokenType {
   NONE
 };
 
+class JackTokenizer {
+  private:
+    std::string input_code;
+  
+  public:
+    JackTokenizer(std::string filename); // Construtor da classe
+    std::string getCode(); //função para testar se leu o arquivo certo
+};
