@@ -43,6 +43,7 @@ void JackTokenizer::advance(){
   std::string symbols = "{}()[].,;+-*/&|<>=~";    //Armazena os simbolos
   if (symbols.find(c) != std::string::npos){     //Se o caractere atual for um simbolo
     currentToken = c;                            //Adiciona o caractere ao token atual
+    //currentToken = std::string(1, c-1);
     currentTokenType = SYMBOL;                   //Define o tipo de token atual como simbolo
     position++;                                  //Avance para o proximo caractere
     return;                                      //Finaliza a funcao
@@ -111,7 +112,7 @@ void JackTokenizer::advance(){
         break;
       }
     } //veifica se o token atual é uma das palavras dentro da lista de palavras-chave 
-
+    
     return; //Achou o token, sai da função
   }
   //Temporario para não ficar em looping

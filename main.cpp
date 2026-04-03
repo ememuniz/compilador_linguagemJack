@@ -39,6 +39,10 @@ int main(int argc, char* argv[]){
     //Se o token for vazio, apenas pula
     if (tokenizer.tokenType() == NONE) continue;
     std::string token = tokenizer.getToken();
+
+    if (token.empty() || token.find_first_not_of(" \t\n\r\v\f") == std::string::npos){
+      continue;
+    }
     switch (tokenizer.tokenType())
     {
     case KEYWORD:
