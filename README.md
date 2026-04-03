@@ -5,7 +5,7 @@
 
 ## 💻 Sobre o Projeto
 
-Este projeto é a implementação do **Analisador Léxico (Tokenizer)** para a linguagem Jack, correspondente à primeira etapa de construção do compilador do curso *Nand2Tetris* (Projeto 10). 
+Este projeto é a implementação do **Analisador Léxico (Tokenizer)** para a linguagem Jack, correspondente à primeira etapa de construção do compilador na disciplina de compiladores do curso de Engenharia da computação da Universidade Federal do Maranhão (UFMA) 
 
 O objetivo deste programa é ler arquivos de código-fonte (`.jack`), ignorar ruídos (como espaços em branco, quebras de linha e comentários) e extrair os **tokens** da linguagem, classificando-os semanticamente em cinco categorias:
 * *Keywords* (Palavras-chave)
@@ -65,13 +65,13 @@ O que faz: Este arquivo testa a "engrenagem" do sistema, ou seja, as funções i
 
 ```bash
 # Compilação
-g++ test.cpp JackTokenizer.cpp -o TesteUnidade
+g++ test.cpp JackTokenizer.cpp -o testes
 
 # Execução (Windows)
-./TesteUnidade.exe
+./testes.exe
 
 # Execução (Linux/Mac)
-./TesteUnidade
+./testes
 ```
 
 **Saída Esperada no Terminal:**
@@ -94,11 +94,11 @@ Pré-requisito: Antes de rodar este teste, certifique-se de que o programa princ
 
 ```bash
 # Compilação
-g++ test_comparacao.cpp -o TesteComparacao
+g++ test_comparacao.cpp -o TesteXML
 
 # Execução (Windows)
-./TesteComparacao.exe
+./TesteXML.exe
 
 # Execução (Linux/Mac)
-./TesteComparacao
+./TesteXML
 ```
