@@ -19,6 +19,7 @@ class JackTokenizer {
     size_t position;                    //armazena a posição atual do arquivo
     std::string currentToken;           //armazena os caracteres do token até encontrar um delimitador
     TokenTypeList currentTokenType;     //armazena o tipo de token definido após o token completo ser armazenado em currentToken
+    void removeComments();               //função para remover os comentários
     
   public:
     JackTokenizer(std::string filename);    // Construtor da classe

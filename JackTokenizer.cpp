@@ -15,6 +15,7 @@ JackTokenizer::JackTokenizer(std::string filename){
   } else {
     input_code = ""; // Se der erro, fica vazio
   }
+  removeComments();
 
   //variaveis
   position = 0;               //Armazena a posicao atual do arquivo, caractere a caractere
@@ -113,11 +114,46 @@ void JackTokenizer::advance(){
 
     return; //Achou o token, sai da função
   }
-
-
-
   //Temporario para não ficar em looping
   position++;
+  advance();  //Evita caracteres indesejados
+}
+
+void JackTokenizer::removeComments(){
+  std::string cleaned_code = "";
+  bool inBlockComment = false; //Memória para saber se estamos dentro de um comentário de bloco /* . . . */
+
+  for (size_t i = 0; i < input_code.length(); i++) { 
+    // Comentário de blocos 
+    if (!inBlockComment && input_code[i] == '/' && i + 1 < input_code.length() && input_code[i + 1] == '*'){
+      inBlockComment = true;
+      i++; //Pulamos o asterisco
+      continue;
+    }  //Se não estamos em um comentário de blocos e o caractere atual for uma barra e o caractere seguinte for um asterisco, então iniciamos um comentario de blocos, e avancemos para o proximo caracteree continuamos o loop.
+
+    if (inBlockComment && input_code[i] == '*' && i + 1 < input_code.length() && input_code[i + 1] == '/'){
+      inBlockComment = false;
+      i++; //Pulamos a barra
+      continue;
+    }
+
+    //Se estamos dentro de um bloco, ignora a letra atual e vai pra próxima
+    if (inBlockComment) continue;
+
+    //Comentário de linha (//)
+    if (input_code[i] == '/' && i + 1 < input_code.length() && input_code[i + 1] == '/'){
+      while(i < input_code.length() && input_code[i] != '\n'){
+        i++;
+      }
+
+      cleaned_code += '\n';  //Ao achar a quebra de linha, mantemos para o cód não grudar
+      continue;
+    }
+
+    cleaned_code += input_code[i];
+  } //vai de zero até o tamanho do input_code que é o tamanho do arquivo, então vai percorrer ele todo
+
+  input_code = cleaned_code; //Substitui o código sujo pelo código limpo. 
 }
 
 //Função de teste

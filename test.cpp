@@ -83,7 +83,7 @@ TEST_CASE("Testando o reconhecimento de Palavras e Keywords"){
 //Teste para ver se os cometarios estão sendo removidos
 TEST_CASE("Testando a remoção de Comentários"){
   JackTokenizer tokenizer(TESTCOMMENTS);       //Cria um tokenizer com o arquivo de teste
-
+  
   tokenizer.advance();
   CHECK(tokenizer.getToken() == "class");      
   tokenizer.advance();
