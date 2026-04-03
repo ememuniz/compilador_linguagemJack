@@ -6,6 +6,7 @@ std::string TESTFILE = "test_codigo.jack";
 std::string TESTSYMBOL = "test_symbol.jack";
 std::string TESTNUMBER = "test_number.jack";
 std::string TESTSTRING = "test_string.jack";
+std::string TESTWORDS = "test_words.jack";
 
 //Teste para verificar se o tokenizer leu o arquivo certo
 TEST_CASE("Testando a leitura de arquivos"){
@@ -55,4 +56,25 @@ TEST_CASE("Testando o reconhecimento de Strings"){
   tokenizer.advance();                         //Avança para o segundo token e armazena ele e seu tipo em suas respectivas variáveis
   CHECK(tokenizer.getToken() == "Jack");       //Verifica se o segundo token foi lido
   CHECK(tokenizer.tokenType() == STRING_CONST); //Verifica se o token lido foi uma string
+}
+
+//Teste para verificar se as palavras chave e os identificadores estão sendo lidos corretamentes
+TEST_CASE("Testando o reconhecimento de Palavras e Keywords"){
+  JackTokenizer tokenizer(TESTWORDS);          //Cria um tokenizer com o arquivo de teste
+
+  tokenizer.advance();                         //Avança para o primeiro token e armazena ele e seu tipo em suas respectivas variáveis
+  CHECK(tokenizer.getToken() == "class");      //Verifica se o primeiro token foi lido
+  CHECK(tokenizer.tokenType() == KEYWORD);     //Verifica se o token lido foi uma keyword
+
+  tokenizer.advance();                         //Avança para o segundo token e armazena ele e seu tipo em suas respectivas variáveis
+  CHECK(tokenizer.getToken() == "var");        //Verifica se o segundo token foi lido
+  CHECK(tokenizer.tokenType() == KEYWORD);     //Verifica se o token lido foi uma keyword
+
+  tokenizer.advance();                         //Avança para o terceiro token e armazena ele e seu tipo em suas respectivas variáveis
+  CHECK(tokenizer.getToken() == "_minhaVariavel");       //Verifica se o terceiro token foi lido
+  CHECK(tokenizer.tokenType() == IDENTIFIER);  //Verifica se o token lido foi um identificador
+
+  tokenizer.advance();                         //Avança para o quarto token e armazena ele e seu tipo em suas respectivas variáveis
+  CHECK(tokenizer.getToken() == "count123");   //Verifica se o quarto token foi lido
+  CHECK(tokenizer.tokenType() == IDENTIFIER);  //Verifica se o token lido foi um identificador
 }
