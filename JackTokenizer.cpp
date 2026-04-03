@@ -1,6 +1,7 @@
 #include "JackTokenizer.h"
 #include <fstream> //Biblioteca que le o arquivo
 #include <sstream> //Biblioteca que manipula blocos de texto 
+#include <cctype>  //Biblioteca que trabalha com caracteres e tem funcoes para trabalhar com eles
 
 //Construtor da classe JackTokenizer
 JackTokenizer::JackTokenizer(std::string filename){
@@ -36,13 +37,24 @@ void JackTokenizer::advance(){
 
   //Variáveis de armazenamento
   char c = input_code[position];                  //Armazena o caractere na posicao atual
-  std::string symbols = "{}()[].,;+-*/&|<>=~";    //Armazena os simbolos
 
+  // SIMBOLOS
+  std::string symbols = "{}()[].,;+-*/&|<>=~";    //Armazena os simbolos
   if (symbols.find(c) != std::string::npos){     //Se o caractere atual for um simbolo
     currentToken = c;                            //Adiciona o caractere ao token atual
     currentTokenType = SYMBOL;                   //Define o tipo de token atual como simbolo
     position++;                                  //Avance para o proximo caractere
     return;                                      //Finaliza a funcao
+  }
+
+  //NUMEROS
+  if(isdigit(c)){                   //Se o caractere atual for um digito
+    while (position < input_code.length() && isdigit(input_code[position])){
+      currentToken += input_code[position]; 
+      position++;
+    }                               //Enquanto ainda tiver caracteres a serem lidos e for um digito, adicione ao token atual e avance.
+    currentTokenType = INT_CONST;    //Define o tipo de token atual como inteiro
+    return;                          //Finaliza a funcao
   }
 
   //Temporario para não ficar em looping
