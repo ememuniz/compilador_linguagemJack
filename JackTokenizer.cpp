@@ -68,6 +68,54 @@ void JackTokenizer::advance(){
     currentTokenType = STRING_CONST;    //Define o tipo de token atual como string
     return;                             //Finaliza a funcao
   }
+
+  //IDENTIFICADORES E KEYWORDS
+  if (isalpha(c) || c == '_'){            //Se o caractere atual for uma letra ou underline
+
+    //Identificadores
+    while(position < input_code.length() && (isalnum(input_code[position]) || input_code[position] == '_')){
+      currentToken += input_code[position]; 
+      position++;
+    }    //enquanto ainda tiver caracteres a serem lidos e for uma letra ou underline, adicione ao token atual e avance.
+
+    //keywords
+    std::string keywords[] = {
+      "class",
+      "constructor",
+      "function",
+      "method",
+      "field",
+      "static",
+      "var",
+      "int",
+      "char",
+      "boolean",
+      "void",
+      "true",
+      "false",
+      "null",
+      "this",
+      "let",
+      "do",
+      "if",
+      "else",
+      "while",
+      "return", 
+    };
+
+    currentTokenType = IDENTIFIER;       //Define o tipo de token atual como identificador
+    for(const std::string& kw : keywords){
+      if(currentToken == kw){
+        currentTokenType = KEYWORD;       //Se o token atual for uma keyword, define o tipo de token atual como keyword
+        break;
+      }
+    } //veifica se o token atual é uma das palavras dentro da lista de palavras-chave 
+
+    return; //Achou o token, sai da função
+  }
+
+
+
   //Temporario para não ficar em looping
   position++;
 }
