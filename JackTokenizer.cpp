@@ -48,15 +48,26 @@ void JackTokenizer::advance(){
   }
 
   //NUMEROS
-  if(isdigit(c)){                   //Se o caractere atual for um digito
+  if(isdigit(c)){                    //Se o caractere atual for um digito
     while (position < input_code.length() && isdigit(input_code[position])){
       currentToken += input_code[position]; 
       position++;
-    }                               //Enquanto ainda tiver caracteres a serem lidos e for um digito, adicione ao token atual e avance.
+    }                                //Enquanto ainda tiver caracteres a serem lidos e for um digito, adicione ao token atual e avance.
     currentTokenType = INT_CONST;    //Define o tipo de token atual como inteiro
     return;                          //Finaliza a funcao
   }
 
+  //STRING
+  if (c == '"'){                        //Se o caractere atual for uma aspas duplas
+    position++;                         //Avance para o proximo caractere
+    while (position < input_code.length() && input_code[position] != '"'){
+      currentToken += input_code[position]; 
+      position++;
+    }                                   //Enquanto ainda tiver caracteres a serem lidos e nao for uma aspas duplas, adicione ao token atual e avance.
+    position++;                         //Avance para o proximo caractere
+    currentTokenType = STRING_CONST;    //Define o tipo de token atual como string
+    return;                             //Finaliza a funcao
+  }
   //Temporario para não ficar em looping
   position++;
 }
