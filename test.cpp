@@ -7,6 +7,7 @@ std::string TESTSYMBOL = "test_symbol.jack";
 std::string TESTNUMBER = "test_number.jack";
 std::string TESTSTRING = "test_string.jack";
 std::string TESTWORDS = "test_words.jack";
+std::string TESTCOMMENTS = "test_comentarios.jack";
 
 //Teste para verificar se o tokenizer leu o arquivo certo
 TEST_CASE("Testando a leitura de arquivos"){
@@ -77,4 +78,19 @@ TEST_CASE("Testando o reconhecimento de Palavras e Keywords"){
   tokenizer.advance();                         //Avança para o quarto token e armazena ele e seu tipo em suas respectivas variáveis
   CHECK(tokenizer.getToken() == "count123");   //Verifica se o quarto token foi lido
   CHECK(tokenizer.tokenType() == IDENTIFIER);  //Verifica se o token lido foi um identificador
+}
+
+//Teste para ver se os cometarios estão sendo removidos
+TEST_CASE("Testando a remoção de Comentários"){
+  JackTokenizer tokenizer(TESTCOMMENTS);       //Cria um tokenizer com o arquivo de teste
+
+  tokenizer.advance();
+  CHECK(tokenizer.getToken() == "class");      
+  tokenizer.advance();
+  CHECK(tokenizer.getToken() == "Main");
+  tokenizer.advance();
+  CHECK(tokenizer.getToken() == "{");
+  tokenizer.advance();
+  CHECK(tokenizer.getToken() == "}");
+  CHECK(tokenizer.hasMoreTokens() == false);
 }
