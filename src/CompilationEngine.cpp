@@ -2,7 +2,7 @@
 
 //region MARK: CONSTRUTOR
 CompilationEngine::CompilationEngine(JackTokenizer& tok, const std::string& outputFile)  //recebe como parâmetros o tokenizer (é o scanner) e o nome do arquivo de saída
-  : tokenizer(tok) {                                    //Armazena o tokenizer
+  : tokenizer(tok), indent("") {                                    //Armazena o tokenizer
     out.open(outputFile);                               //Armazena o arquivo de saída
     if (!out.is_open()) throw std::runtime_error("Erro ao criar arquivo XML.");          //Se der erro ao criar o arquivo, lançamos uma exceção
     if (tokenizer.hasMoreTokens()) {                    //Se houver mais tokens, avançamos
@@ -65,9 +65,36 @@ std::string CompilationEngine::escapeXML (const std::string& text) {
 void CompilationEngine::printXMLToken() {
   std::string token = tokenizer.getToken();
   switch (tokenizer.tokenType()){
-    case KEYWORD:         out << "<keyword> " << token << " </keyword>\n"; break;
-    case IDENTIFIER:      out << "<identifier> " << token << " </identifier>\n"; break;
-    case SYMBOL:          out << "<symbol> " << escapeXML(token) << " </symbol>\n"; break;
+    case KEYWORD:         out << indent << "<keyword> " << token << " </keyword>\n"; break;
+    case IDENTIFIER:      out << indent << "<identifier> " << token << " </identifier>\n"; break;
+    case SYMBOL:          out << indent << "<symbol> " << escapeXML(token) << " </symbol>\n"; break;
+    default: break;
   }
+}
+//endregion
+
+
+//region MARK: PRINTNONTERMINALSTART()
+void CompilationEngine::printNonTerminalStart(const std::string& tag) {
+  out << indent << "<" << tag << ">\n";           //out recebe a indentação mais o inicio da tag e a quebra de linha
+  indent += "  ";                                 //toda vez que abre uma tag, empurra o texto 2 espaços pra direita.               
+}
+//endregion
+
+//region MARK: PRINTNONTERMINALEND()
+void CompilationEngine::printNonTerminalEnd(const std::string& tag) {
+  indent.resize(indent.length() - 2);             //Tira 2 espaços (volta pra esquerda)
+  out << indent << "</" << tag << ">\n";          //out recebe a indentação mais o fim da tag e a quebra de linha
+}
+//endregion
+
+//region MARK: REGRAS DA GRAMÁTICA JACK
+void CompilationEngine::compileClass() {
+  printNonTerminalStart("class");                 //Abre a tag class -> identação + <class>
+  consume(KEYWORD, "class");                      //Consumimos o token "class"
+  consume(IDENTIFIER);                            //Consumimos o nome da classe, como pode variar, só consumimos o tipo e não o token
+  consume(SYMBOL, "{");                           //Consumimos o token "{"
+  consume(SYMBOL, "}");                           //Consumimos o token "}"
+  printNonTerminalEnd("class");                   //Fecha a tag class
 }
 //endregion

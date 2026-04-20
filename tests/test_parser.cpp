@@ -39,14 +39,21 @@ TEST_CASE("Testando ferramentas auxiliares do Compilation Engine") {
     outJack << "class Main{ }";
     outJack.close();
 
-    JackTokenizer tk("temp_class.jack");
-    CompilationEngine eng(tk, "temp_class.xml");
-    eng.compileClass();
+    {
+      JackTokenizer tk("temp_class.jack");
+      CompilationEngine eng(tk, "temp_class.xml");
+      eng.compileClass();
+    }
 
     std::ifstream xmlIn("temp_class.xml");
     std::stringstream buffer;
     buffer << xmlIn.rdbuf();
     std::string xmlGerado = buffer.str();
+
+    std::string xmlLimpo = "";
+    for (char c : xmlGerado) {
+      if (c != '\r') xmlLimpo += c;
+    }
 
     std::string xmlEsperado = 
       "<class>\n"
@@ -56,7 +63,7 @@ TEST_CASE("Testando ferramentas auxiliares do Compilation Engine") {
       "  <symbol> } </symbol>\n"
       "</class>\n";
 
-    CHECK(xmlGerado == xmlEsperado);
+    CHECK(xmlLimpo == xmlEsperado);
   }
   //endregion
 
