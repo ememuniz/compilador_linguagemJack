@@ -32,5 +32,32 @@ TEST_CASE("Testando ferramentas auxiliares do Compilation Engine") {
     CHECK_THROWS_AS(engine.consume(SYMBOL, "{"), std::runtime_error); //Se um símbolo for consumido agora, é lançado um erro
   }
   //endregion
-  
+
+  //region MARK: TESTE DO GERA XML - CLASSE VAZIA
+  SUBCASE("Gera XML correto para uma declaração de classe vazia"){
+    std::ofstream outJack("temp_class.jack");
+    outJack << "class Main{ }";
+    outJack.close();
+
+    JackTokenizer tk("temp_class.jack");
+    CompilationEngine eng(tk, "temp_class.xml");
+    eng.compileClass();
+
+    std::ifstream xmlIn("temp_class.xml");
+    std::stringstream buffer;
+    buffer << xmlIn.rdbuf();
+    std::string xmlGerado = buffer.str();
+
+    std::string xmlEsperado = 
+      "<class>\n"
+      "  <keyword> class </keyword>\n"
+      "  <identifier> Main </identifier>\n"
+      "  <symbol> { </symbol>\n"
+      "  <symbol> } </symbol>\n"
+      "</class>\n";
+
+    CHECK(xmlGerado == xmlEsperado);
+  }
+  //endregion
+
 }
