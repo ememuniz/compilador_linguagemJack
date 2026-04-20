@@ -29,19 +29,19 @@ std::string readAndNormalize(const std::string& caminho) {
 TEST_CASE("Comparando XML gerado com o Gabarito do Nand2Tetris") {
   SUBCASE("Testando arquivo MainT.xml") {
     std::string meuXML = readAndNormalize("MainT.xml");
-    std::string gabaritoXML = readAndNormalize("originais/MainT.xml");
+    std::string gabaritoXML = readAndNormalize("gabarito/MainT.xml");
     CHECK(meuXML == gabaritoXML);
   }
 
   SUBCASE("Testando arquivo SquareT.xml") {
     std::string meuXML = readAndNormalize("SquareT.xml");
-    std::string gabaritoXML = readAndNormalize("originais/SquareT.xml");
+    std::string gabaritoXML = readAndNormalize("gabarito/SquareT.xml");
     CHECK(meuXML == gabaritoXML);
   }
 
   SUBCASE("Testando arquivo SquareGameT.xml") {
     std::string meuXML = readAndNormalize("SquareGameT.xml");
-    std::string gabaritoXML = readAndNormalize("originais/SquareGameT.xml");
+    std::string gabaritoXML = readAndNormalize("gabarito/SquareGameT.xml");
     CHECK(meuXML == gabaritoXML);
   }
 }
