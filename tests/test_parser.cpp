@@ -309,6 +309,83 @@ TEST_CASE("Testando ferramentas auxiliares do Compilation Engine") {
     
     CHECK(xmlGerado == xmlEsperado);
   }
+  //endregion
+
+  //region MARK: TESTE DO GERA XML - COMANDOS LET
+  SUBCASE("Gera XML para comandos if e while") {
+    std::ofstream outJack("temp_let.jack");
+    outJack << "class Main { function void main() { let x = y; let a[i] = j; } }";
+    outJack.close();
+
+    {
+      JackTokenizer tk("temp_let.jack");
+      CompilationEngine eng(tk, "temp_let.xml");
+      eng.compileClass();
+    }
+
+    std::ifstream xmlIn("temp_let.xml");
+    std::stringstream buffer;
+    buffer << xmlIn.rdbuf();
+
+    std::string xmlGerado = "";
+    for (char c : buffer.str()) {
+      if (c != '\r') xmlGerado += c;
+    };
+
+    std::string xmlEsperado =
+      "<class>\n"
+      "  <keyword> class </keyword>\n"
+      "  <identifier> Main </identifier>\n"
+      "  <symbol> { </symbol>\n"
+      "  <subroutineDec>\n"
+      "    <keyword> function </keyword>\n"
+      "    <keyword> void </keyword>\n"
+      "    <identifier> main </identifier>\n"
+      "    <symbol> ( </symbol>\n"
+      "    <parameterList>\n"
+      "    </parameterList>\n"
+      "    <symbol> ) </symbol>\n"
+      "    <subroutineBody>\n"
+      "      <symbol> { </symbol>\n"
+      "      <statements>\n"
+      "        <letStatement>\n"
+      "          <keyword> let </keyword>\n"
+      "          <identifier> x </identifier>\n"
+      "          <symbol> = </symbol>\n"
+      "          <expression>\n"
+      "            <term>\n"
+      "              <identifier> y </identifier>\n"
+      "            </term>\n"
+      "          </expression>\n"
+      "          <symbol> ; </symbol>\n"
+      "        </letStatement>\n"
+      "        <letStatement>\n"
+      "          <keyword> let </keyword>\n"
+      "          <identifier> a </identifier>\n"
+      "          <symbol> [ </symbol>\n"
+      "          <expression>\n"
+      "            <term>\n"
+      "              <identifier> i </identifier>\n"
+      "            </term>\n"
+      "          </expression>\n"
+      "          <symbol> ] </symbol>\n"
+      "          <symbol> = </symbol>\n"
+      "          <expression>\n"
+      "            <term>\n"
+      "              <identifier> j </identifier>\n"
+      "            </term>\n"
+      "          </expression>\n"
+      "          <symbol> ; </symbol>\n"
+      "        </letStatement>\n"
+      "      </statements>\n"
+      "      <symbol> } </symbol>\n"
+      "    </subroutineBody>\n"
+      "  </subroutineDec>\n"
+      "  <symbol> } </symbol>\n"
+      "</class>\n";
+    
+    CHECK(xmlGerado == xmlEsperado);
+  }
   //endregion*/
 
 

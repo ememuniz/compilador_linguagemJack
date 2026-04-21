@@ -271,7 +271,7 @@ void CompilationEngine::compileStatements() {
     
     // Roteador de comandos
     if (kw == "let") {
-      // compileLet(); // Implementaremos nos próximos passos
+      compileLet(); 
     } else if (kw == "if") {
       compileIf();
     } else if (kw == "while") {
@@ -364,7 +364,30 @@ void CompilationEngine::compileTerm() {
   consume(IDENTIFIER);                            //Consome o identificador
   printNonTerminalEnd("term");                    //Fecha a tag term
 }
+//endregion
+
+//region MARK: REGRAS DE GRAMÁTICA DE ATRIBUIÇÃO DE VARIAVEL
+void CompilationEngine::compileLet() {
+  printNonTerminalStart("letStatement"); 
+
+  consume(KEYWORD, "let");                                //Consome a declaração de let
+  consume(IDENTIFIER);
+
+  //Se é uma atribuição de um array
+  if (match(SYMBOL, "[")) {
+    consume(SYMBOL, "[");
+    compileExpression();
+    consume(SYMBOL, "]");
+  }
+
+  consume(SYMBOL, "=");
+  compileExpression();
+  consume(SYMBOL, ";");
+
+  printNonTerminalEnd("letStatement");
+}
+//endregion
 
 //Esqueletos pra nao dar problema no teste
-void CompilationEngine::compileLet() {}
+
 void CompilationEngine::compileDo() {}
