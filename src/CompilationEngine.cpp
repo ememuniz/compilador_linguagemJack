@@ -1,11 +1,14 @@
 #include "CompilationEngine.h"
 
 //region MARK: CONSTRUTOR
-CompilationEngine::CompilationEngine(JackTokenizer& tok, const std::string& outputFile)  //recebe como parâmetros o tokenizer (é o scanner) e o nome do arquivo de saída
+CompilationEngine::CompilationEngine(JackTokenizer& tok, const std::string& outputFile)  
+//recebe como parâmetros o tokenizer (é o scanner) e o nome do arquivo de saída
   : tokenizer(tok), indent("") {                                    //Armazena o tokenizer
-    out.open(outputFile);                               //Armazena o arquivo de saída
-    if (!out.is_open()) throw std::runtime_error("Erro ao criar arquivo XML.");          //Se der erro ao criar o arquivo, lançamos uma exceção
-    if (tokenizer.hasMoreTokens()) {                    //Se houver mais tokens, avançamos
+    out.open(outputFile);                                           //Armazena o arquivo de saída
+    //Se der erro ao criar o arquivo, lançamos uma exceção
+    if (!out.is_open()) throw std::runtime_error("Erro ao criar arquivo XML.");
+    //Se houver mais tokens, avançamos          
+    if (tokenizer.hasMoreTokens()) {                    
       tokenizer.advance();
     }
   }

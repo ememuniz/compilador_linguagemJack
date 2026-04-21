@@ -111,4 +111,58 @@ TEST_CASE("Testando ferramentas auxiliares do Compilation Engine") {
     CHECK(xmlGerado == xmlEsperado);
   }
   //endregion
+
+  //region MARK: TESTE DO GERA XML - CLASSE COM SUBROUTINE 
+  SUBCASE("Gera XML para classe com uma subrotina (funcão) e parametros") {
+    std::ofstream outJack("temp_sub.jack");
+    // Uma classe com uma função que recebe dois parâmetros e tem corpo vazio
+    // SubroutineDec: (constructor | function | method) + (void | tipo) + nomeDaSubrotina + "(" + parameterList + ")" + subroutineBody
+    outJack << "class Main { function void main(int a, boolean b) { } }";
+    outJack.close();
+
+    {
+      JackTokenizer tk("temp_sub.jack");
+      CompilationEngine eng(tk, "temp_sub.xml");
+      eng.compileClass();
+    }
+
+    std::ifstream xmlIn("temp_sub.xml");
+    std::stringstream buffer;
+    buffer << xmlIn.rdbuf();
+
+    std::string xmlGerado = "";
+    for (char c : buffer.str()) {
+      if (c != '\r') xmlGerado += c;
+    }
+
+    std::string xmlEsperado = 
+      "<class>\n"
+      "  <keyword> class </keyword>\n"
+      "  <identifier> Main </identifier>\n"
+      "  <symbol> { </symbol>\n"
+      "  <subroutineDec>\n"
+      "    <keyword> function </keyword>\n"
+      "    <keyword> void </keyword>\n"
+      "    <identifier> main </identifier>\n"
+      "    <symbol> ( </symbol>\n"
+      "    <parameterList>\n"
+      "      <keyword> int </keyword>\n"
+      "      <identifier> a </identifier>\n"
+      "      <symbol> , </symbol>\n"
+      "      <keyword> boolean </keyword>\n"
+      "      <identifier> b </identifier>\n"
+      "    </parameterList>\n"
+      "    <symbol> ) </symbol>\n"
+      "    <subroutineBody>\n"
+      "      <symbol> { </symbol>\n"
+      "      <symbol> } </symbol>\n"
+      "    </subroutineBody>\n"
+      "  </subroutineDec>\n"
+      "  <symbol> } </symbol>\n"
+      "</class>\n";
+
+    CHECK(xmlGerado == xmlEsperado);
+  }
+  //endregion
+  
 }
