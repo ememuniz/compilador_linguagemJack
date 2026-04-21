@@ -88,13 +88,57 @@ void CompilationEngine::printNonTerminalEnd(const std::string& tag) {
 }
 //endregion
 
-//region MARK: REGRAS DA GRAMÁTICA JACK
+//region MARK: REGRAS DA GRAMÁTICA DE CLASSE
 void CompilationEngine::compileClass() {
   printNonTerminalStart("class");                 //Abre a tag class -> identação + <class>
+
   consume(KEYWORD, "class");                      //Consumimos o token "class"
   consume(IDENTIFIER);                            //Consumimos o nome da classe, como pode variar, só consumimos o tipo e não o token
   consume(SYMBOL, "{");                           //Consumimos o token "{"
+
+  while (match(KEYWORD, "static") || match(KEYWORD, "field")) {
+    compileClassVarDec();                         //Chamamos a regra de classVarDec quando for lido static ou field
+  }
+
   consume(SYMBOL, "}");                           //Consumimos o token "}"
   printNonTerminalEnd("class");                   //Fecha a tag class
+}
+//endregion
+
+
+//region MARK: REGRAS DA GRAMÁTICA DE CLASSVARDEC
+void CompilationEngine::compileClassVarDec() {
+  printNonTerminalStart("classVarDec");           //Abre a tag classVarDec -> identação + <classVarDec>
+
+  //Consome 'static' ou 'field'
+  if (match(KEYWORD, "static")) {
+    consume(KEYWORD, "static");
+  } else {
+    consume(KEYWORD, "field");
+  }
+
+  //Consome o tipo (int, char, boolean ou NomeDeClasse)
+  if (match(KEYWORD, "int")) {
+    consume(KEYWORD, "int");
+  } else if (match(KEYWORD, "char")) {
+    consume(KEYWORD, "char");
+  } else if (match(KEYWORD, "boolean")) {
+    consume(KEYWORD, "boolean");
+  } else {
+    consume(IDENTIFIER);
+  }
+
+  //Consome o nome da variável
+  consume(IDENTIFIER);
+
+  //Enquanto tiver virgula, tem mais variáveis do mesmo tipo na mesma linha!
+  while (match(SYMBOL, ",")) {
+    consume(SYMBOL, ",");
+    consume(IDENTIFIER);          
+  }
+
+  //Finaliza com ponto e virgula
+  consume(SYMBOL, ";");
+  printNonTerminalEnd("classVarDec");             //Fecha a tag classVarDec
 }
 //endregion

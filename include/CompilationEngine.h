@@ -27,8 +27,9 @@ class CompilationEngine {
     ~CompilationEngine();
     bool match(TokenTypeList type);                     //O token atual corresponde ao esperado?
     bool match(TokenTypeList type, const std::string& value);  //value e type correspondem ao token atual?
-    void consume(TokenTypeList type, const std::string& expectedValue = "");    //Consome o token atual
+    void consume(TokenTypeList type, const std::string& expectedValue = "");  //Consome o token atual
     void compileClass();                                //Compila uma classe Jack
+    void compileClassVarDec();                          //Compila uma classe com variaveis
   //endregion
 };
 
