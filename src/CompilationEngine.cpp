@@ -42,14 +42,16 @@ bool CompilationEngine::match(TokenTypeList type, const std::string& value) {
 
 //region MARK: CONSUME()
 void CompilationEngine::consume(TokenTypeList type, const std::string& expectedValue) {
-  if (match(type)) {                                //Se o token atual corresponder ao esperado
-    if (!expectedValue.empty() && tokenizer.getToken() != expectedValue) {  //Se o expectValue não estiver vazio e ele não for o token atual
-      throw std::runtime_error("Erro: Esperava" + expectedValue); //Lançamos uma exceção
+  if (match(type)) {                                    //Se o token atual corresponder ao esperado
+    if (!expectedValue.empty() && tokenizer.getToken() != expectedValue) {  
+      // Se não for o texto exato que esperávamos
+      throw std::runtime_error("Erro: Esperava '" + expectedValue + "' mas encontrou '" + tokenizer.getToken() + "'"); 
     }
-    printXMLToken();                                //Escrevemos o token no XML
-    advance();                                      //Avançamos para o próximo
+    printXMLToken();                                    //Escrevemos o token no XML
+    advance();                                          //Avançamos para o próximo
   } else {
-    throw std::runtime_error("Erro: Tipo de token inesperado.");
+    // Melhoria: Agora o erro diz exatamente QUAL token causou o problema
+    throw std::runtime_error("Erro: Tipo de token inesperado. Token atual: '" + tokenizer.getToken() + "'");
   }
 }
 //endregion
@@ -258,17 +260,27 @@ void CompilationEngine::compileVarDec() {
 }
 //endregion
 
-//region MARK: REGRAS DA GRAMÁTICA DE COMANDOS
+//region MARK: REGRAS DA GRAMÁTICA DE STATEMENTS
 void CompilationEngine::compileStatements() {
   printNonTerminalStart("statements");
 
-  //Fica em looping enquanto encontrar o início de algum comando válido
+  // O loop continua enquanto o token atual for uma das 5 palavras-chave de comandos
   while (match(KEYWORD, "let") || match(KEYWORD, "if") || match(KEYWORD, "while") || match(KEYWORD, "do") || match(KEYWORD, "return")) {
-    if (match(KEYWORD, "let")) compileLet();
-    else if (match(KEYWORD, "if")) compileIf();
-    else if (match(KEYWORD, "while")) compileWhile();
-    else if (match(KEYWORD, "do")) compileDo();
-    else if (match(KEYWORD, "return")) compileReturn();
+    
+    std::string kw = tokenizer.getToken();
+    
+    // Roteador de comandos
+    if (kw == "let") {
+      // compileLet(); // Implementaremos nos próximos passos
+    } else if (kw == "if") {
+      compileIf();
+    } else if (kw == "while") {
+      compileWhile();
+    } else if (kw == "do") {
+      // compileDo(); // Implementaremos nos próximos passos
+    } else if (kw == "return") {
+      compileReturn();
+    }
   }
 
   printNonTerminalEnd("statements");
@@ -294,8 +306,65 @@ void CompilationEngine::compileReturn() {
 }
 //endregion
 
+//region MARK: REGRAS DA GRAMÁTICA DE COMANDO IF
+void CompilationEngine::compileIf() {
+  printNonTerminalStart("ifStatement");           //Abre a tag ifStatement -> identação + <ifStatement>
+
+  consume(KEYWORD, "if");                         //Consome a declaração de if
+  consume(SYMBOL, "(");                           //Consome o parenteses de abertura
+  compileExpression();                            //TODO compileExpression() no futuro - traz a condição
+  consume(SYMBOL, ")");                           //Consome o parenteses de fechamento
+
+  consume(SYMBOL, "{");
+  compileStatements();                            //RECURSIVIDADE - chama compileStatements()
+  consume(SYMBOL, "}");
+
+  //O else é opcional
+  if (match(KEYWORD, "else")) {
+    consume(KEYWORD, "else");
+    consume(SYMBOL, "{");
+    compileStatements();                          //RECURSIVIDADE - chama compileStatements()
+    consume(SYMBOL, "}");
+  }
+
+  printNonTerminalEnd("ifStatement");             //Fecha a tag ifStatement
+}
+//endregion
+
+//region MARK: REGRAS DA GRAMÁTICA DE COMANDO WHILE
+void CompilationEngine::compileWhile() {
+  printNonTerminalStart("whileStatement");        //Abre a tag whileStatement -> identação + <whileStatement>
+
+  consume(KEYWORD, "while");                      //Consome a declaração de while
+  consume(SYMBOL, "(");                           //Consome o parenteses de abertura
+  compileExpression();                            //TODO compileExpression() no futuro - traz a condição
+  consume(SYMBOL, ")");                           //Consome o parenteses de fechamento
+
+  consume(SYMBOL, "{");
+  compileStatements();                            //RECURSIVIDADE - chama compileStatements()
+  consume(SYMBOL, "}");
+
+  printNonTerminalEnd("whileStatement");          //Fecha a tag whileStatement
+}
+//endregion
+
+//region MARK: REGRAS DE GRAMÁTICA DE EXPRESSÕES
+void CompilationEngine::compileExpression() {
+  printNonTerminalStart("expression");            //Abre a tag expression -> identação + <expression>
+  
+  compileTerm();                                  //TODO compileTerm() no futuro
+
+  printNonTerminalEnd("expression");              //Fecha a tag expression
+}
+//endregion
+
+//region MARK: REGRAS DE GRAMÁTICA DE TERMOS
+void CompilationEngine::compileTerm() {
+  printNonTerminalStart("term");                  //Abre a tag term -> identação + <term>
+  consume(IDENTIFIER);                            //Consome o identificador
+  printNonTerminalEnd("term");                    //Fecha a tag term
+}
+
 //Esqueletos pra nao dar problema no teste
 void CompilationEngine::compileLet() {}
-void CompilationEngine::compileIf() {}
-void CompilationEngine::compileWhile() {}
 void CompilationEngine::compileDo() {}

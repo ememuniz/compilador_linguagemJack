@@ -229,17 +229,17 @@ TEST_CASE("Testando ferramentas auxiliares do Compilation Engine") {
 
   //region MARK: TESTE DO GERA XML - COMANDOS IF E ELSE
   SUBCASE("Gera XML para comandos if e while") {
-    std::ofstream outJack("files/temp_if_while.jack");
+    std::ofstream outJack("temp_if_while.jack");
     outJack << "class Main { function void main() { if (x) { return; } while (y) { return; } } }";
     outJack.close();
 
     {
-      JackTokenizer tk("files/temp_if_while.jack");
-      CompilationEngine eng(tk, "files/temp_if_while.xml");
+      JackTokenizer tk("temp_if_while.jack");
+      CompilationEngine eng(tk, "temp_if_while.xml");
       eng.compileClass();
     }
 
-    std::ifstream xmlIn("files/temp_if_while.xml");
+    std::ifstream xmlIn("temp_if_while.xml");
     std::stringstream buffer;
     buffer << xmlIn.rdbuf();
 
@@ -249,66 +249,67 @@ TEST_CASE("Testando ferramentas auxiliares do Compilation Engine") {
     };
 
     std::string xmlEsperado =
-    "<class>\n"
-    "  <keyword> class </keyword>\n"
-    "  <identifier> Main </identifier>\n"
-    "  <symbol> { </symbol>\n"
-    "  <subroutineDec>\n"
-    "     <keyword> function </keyword>\n"
-    "     <keyword> void </keyword>\n"
-    "     <identifier> main </identifier>\n"
-    "     <symbol> ( </symbol>\n"
-    "     <parameterList>\n"
-    "     </parameterList>\n"
-    "     <symbol> ) </symbol>\n"
-    "     <subroutineBody>\n"
-    "       <symbol> { </symbol>\n"
-    "       <statements>\n"
-    "         <ifStatement>\n"
-    "           <keyword> if </keyword>\n"
-    "           <symbol> ( </symbol>\n"
-    "           <expression>\n"
-    "             <term>\n"
-    "               <identifier> x </identifier>\n"
-    "            </term>\n"
-    "          </expression>\n"
-    "          <symbol> ) </symbol>\n"
-    "          <symbol> { </symbol>\n"
-    "          <statements>\n"
-    "            <returnStatement>\n"
-    "              <keyword> return </keyword>\n"
-    "              <symbol> ; </symbol>\n"
-    "            </returnStatement>\n"
-    "          </statements>\n"
-    "          <symbol> } </symbol>\n"
-    "        </ifStatement>\n"
-    "        <whileStatement>\n"
-    "          <keyword> while </keyword>\n"
-    "          <symbol> ( </symbol>\n"
-    "          <expression>\n"
-    "            <term>\n"
-    "              <identifier> y </identifier>\n"
-    "            </term>\n"
-    "          </expression>\n"
-    "          <symbol> ) </symbol>\n"
-    "          <symbol> { </symbol>\n"
-    "          <statements>\n"
-    "            <returnStatement>\n"
-    "              <keyword> return </keyword>\n"
-    "              <symbol> ; </symbol>\n"
-    "            </returnStatement>\n"
-    "          </statements>\n"
-    "          <symbol> } </symbol>\n"
-    "        </whileStatement>\n"
-    "      </statements>\n"
-    "      <symbol> } </symbol>\n"
-    "    </subroutineBody>\n"
-    "  </subroutineDec>\n"
-    "  <symbol> } </symbol>\n"
-    "</class>\n";
+      "<class>\n"
+      "  <keyword> class </keyword>\n"
+      "  <identifier> Main </identifier>\n"
+      "  <symbol> { </symbol>\n"
+      "  <subroutineDec>\n"
+      "    <keyword> function </keyword>\n"
+      "    <keyword> void </keyword>\n"
+      "    <identifier> main </identifier>\n"
+      "    <symbol> ( </symbol>\n"
+      "    <parameterList>\n"
+      "    </parameterList>\n"
+      "    <symbol> ) </symbol>\n"
+      "    <subroutineBody>\n"
+      "      <symbol> { </symbol>\n"
+      "      <statements>\n"
+      "        <ifStatement>\n"
+      "          <keyword> if </keyword>\n"
+      "          <symbol> ( </symbol>\n"
+      "          <expression>\n"
+      "            <term>\n"
+      "              <identifier> x </identifier>\n"
+      "            </term>\n"
+      "          </expression>\n"
+      "          <symbol> ) </symbol>\n"
+      "          <symbol> { </symbol>\n"
+      "          <statements>\n"
+      "            <returnStatement>\n"
+      "              <keyword> return </keyword>\n"
+      "              <symbol> ; </symbol>\n"
+      "            </returnStatement>\n"
+      "          </statements>\n"
+      "          <symbol> } </symbol>\n"
+      "        </ifStatement>\n"
+      "        <whileStatement>\n"
+      "          <keyword> while </keyword>\n"
+      "          <symbol> ( </symbol>\n"
+      "          <expression>\n"
+      "            <term>\n"
+      "              <identifier> y </identifier>\n"
+      "            </term>\n"
+      "          </expression>\n"
+      "          <symbol> ) </symbol>\n"
+      "          <symbol> { </symbol>\n"
+      "          <statements>\n"
+      "            <returnStatement>\n"
+      "              <keyword> return </keyword>\n"
+      "              <symbol> ; </symbol>\n"
+      "            </returnStatement>\n"
+      "          </statements>\n"
+      "          <symbol> } </symbol>\n"
+      "        </whileStatement>\n"
+      "      </statements>\n"
+      "      <symbol> } </symbol>\n"
+      "    </subroutineBody>\n"
+      "  </subroutineDec>\n"
+      "  <symbol> } </symbol>\n"
+      "</class>\n";
+    
+    CHECK(xmlGerado == xmlEsperado);
   }
-  //endregion
+  //endregion*/
 
-  
 
 }

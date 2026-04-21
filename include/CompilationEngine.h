@@ -40,6 +40,8 @@ class CompilationEngine {
     void compileWhile();                         //Compila uma declaração de while
     void compileDo();                            //Compila uma declaração de do
     void compileReturn();                        //Compila uma declaração de return
+    void compileExpression();                    //Compila uma expressão
+    void compileTerm();                          //Compila um termo
   //endregion
 };
 
