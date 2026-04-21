@@ -67,4 +67,48 @@ TEST_CASE("Testando ferramentas auxiliares do Compilation Engine") {
   }
   //endregion
 
+  //region MARK: TESTE DO GERA XML - CLASSE COM VARIAVEL
+  SUBCASE("Gera XML para classe com variaveis de classe (classVarDec)") {
+    std::ofstream outJack("temp_var.jack");
+    // Uma classe com uma variavel estatica e duas de campo (field)
+    outJack << "class Main { static int x; field boolean y, z; }";
+    outJack.close();
+    {
+      JackTokenizer tk("temp_var.jack");
+      CompilationEngine eng(tk, "temp_var.xml");
+      eng.compileClass();
+    }
+    std::ifstream xmlIn("temp_var.xml");
+    std::stringstream buffer;
+    buffer << xmlIn.rdbuf();
+    std::string xmlGerado = "";
+    for (char c : buffer.str()) {
+      if (c != '\r') xmlGerado += c;
+    }
+
+    std::string xmlEsperado = 
+      "<class>\n"
+      "  <keyword> class </keyword>\n"
+      "  <identifier> Main </identifier>\n"
+      "  <symbol> { </symbol>\n"
+      "  <classVarDec>\n"
+      "    <keyword> static </keyword>\n"
+      "    <keyword> int </keyword>\n"
+      "    <identifier> x </identifier>\n"
+      "    <symbol> ; </symbol>\n"
+      "  </classVarDec>\n"
+      "  <classVarDec>\n"
+      "    <keyword> field </keyword>\n"
+      "    <keyword> boolean </keyword>\n"
+      "    <identifier> y </identifier>\n"
+      "    <symbol> , </symbol>\n"
+      "    <identifier> z </identifier>\n"
+      "    <symbol> ; </symbol>\n"
+      "  </classVarDec>\n"
+      "  <symbol> } </symbol>\n"
+      "</class>\n";
+    
+    CHECK(xmlGerado == xmlEsperado);
+  }
+  //endregion
 }

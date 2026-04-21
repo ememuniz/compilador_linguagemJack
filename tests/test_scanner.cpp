@@ -2,12 +2,12 @@
 #include "doctest.h"
 #include "JackTokenizer.h"
 
-std::string TESTFILE = "test_codigo.jack";
-std::string TESTSYMBOL = "test_symbol.jack";
-std::string TESTNUMBER = "test_number.jack";
-std::string TESTSTRING = "test_string.jack";
-std::string TESTWORDS = "test_words.jack";
-std::string TESTCOMMENTS = "test_comentarios.jack";
+std::string TESTFILE = "files/test_codigo.jack";
+std::string TESTSYMBOL = "files/test_symbol.jack";
+std::string TESTNUMBER = "files/test_number.jack";
+std::string TESTSTRING = "files/test_string.jack";
+std::string TESTWORDS = "files/test_words.jack";
+std::string TESTCOMMENTS = "files/test_comentarios.jack";
 
 //Teste para verificar se o tokenizer leu o arquivo certo
 TEST_CASE("Testando a leitura de arquivos"){
@@ -17,7 +17,7 @@ TEST_CASE("Testando a leitura de arquivos"){
 
 //Teste para verificar se os simbolos estão sendo lidos corretamente
 TEST_CASE("Testando o reconhecimento de Simbolos"){
-  JackTokenizer tokenizer("test_symbol.jack");  //Cria um tokenizer com o arquivo de teste
+  JackTokenizer tokenizer(TESTSYMBOL);          //Cria um tokenizer com o arquivo de teste
   CHECK(tokenizer.hasMoreTokens() == true);     //Verifica se o texto foi lido todo.  
 
   tokenizer.advance();                          //Avança para o primeiro token e armazena ele e seu tipo em suas respectivas variáveis
