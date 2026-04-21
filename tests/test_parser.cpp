@@ -155,6 +155,8 @@ TEST_CASE("Testando ferramentas auxiliares do Compilation Engine") {
       "    <symbol> ) </symbol>\n"
       "    <subroutineBody>\n"
       "      <symbol> { </symbol>\n"
+      "      <statements>\n"
+      "      </statements>\n"
       "      <symbol> } </symbol>\n"
       "    </subroutineBody>\n"
       "  </subroutineDec>\n"

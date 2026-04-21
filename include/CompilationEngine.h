@@ -25,14 +25,21 @@ class CompilationEngine {
   public:
     CompilationEngine(JackTokenizer& tokenizer, const std::string& outputFile);
     ~CompilationEngine();
-    bool match(TokenTypeList type);                     //O token atual corresponde ao esperado?
+    bool match(TokenTypeList type);              //O token atual corresponde ao esperado?
     bool match(TokenTypeList type, const std::string& value);  //value e type correspondem ao token atual?
     void consume(TokenTypeList type, const std::string& expectedValue = "");  //Consome o token atual
-    void compileClass();                                //Compila uma classe Jack
-    void compileClassVarDec();                          //Compila uma classe com variaveis
-    void compileSubroutine();                           //Compila uma subrotina
-    void compileParameterList();                        //Compila uma lista de parametros
-    void compileSubroutineBody();                       //Compila o corpo de uma subrotina
+    void compileClass();                         //Compila uma classe Jack
+    void compileClassVarDec();                   //Compila uma classe com variaveis
+    void compileSubroutine();                    //Compila uma subrotina- funções, metodos e construtores
+    void compileParameterList();                 //Compila uma lista de parametros
+    void compileSubroutineBody();                //Compila o corpo de uma subrotina - função, método ou construtor
+    void compileVarDec();                        //Compila uma declaração de variavel
+    void compileStatements();                    //Compila um conjunto de declarações
+    void compileLet();                           //Compila uma declaração de atribuição
+    void compileIf();                            //Compila uma declaração de if
+    void compileWhile();                         //Compila uma declaração de while
+    void compileDo();                            //Compila uma declaração de do
+    void compileReturn();                        //Compila uma declaração de return
   //endregion
 };
 

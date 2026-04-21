@@ -218,9 +218,84 @@ void CompilationEngine::compileSubroutineBody() {
 
   consume(SYMBOL, "{");
 
-  //TODO VARIAVEIS LOCAIS E COMANDOS AQUI
+  while (match(KEYWORD, "var")) {
+    compileVarDec();
+  }
+
+  compileStatements();
 
   consume(SYMBOL, "}");
-  
+
   printNonTerminalEnd("subroutineBody");          //Fecha a tag subroutineBody
 }
+//endregion
+
+//region MARK: REGRAS DA GRAMÁTICA DE DEC DE VARIAVEIS
+void CompilationEngine::compileVarDec() {
+  printNonTerminalStart("varDec");                //Abre a tag varDec -> identação + <varDec>
+
+  //Consome a declaração
+  consume(KEYWORD, "var");
+
+  //Consome o tipo
+  if (match(KEYWORD, "int")) consume(KEYWORD, "int");
+  else if (match(KEYWORD, "char")) consume(KEYWORD, "char");
+  else if (match(KEYWORD, "boolean")) consume(KEYWORD, "boolean");
+  else consume(IDENTIFIER);
+
+  //Consome o nome da variável
+  consume(IDENTIFIER);
+
+  //Enquanto tiver virgula, tem mais variáveis do mesmo tipo na mesma linha!
+  while (match(SYMBOL, ",")) {
+    consume(SYMBOL, ",");
+    consume(IDENTIFIER);
+  }
+
+  consume(SYMBOL, ";");                           //Consome o token ";"
+
+  printNonTerminalEnd("varDec");                  //Fecha a tag varDec
+}
+//endregion
+
+//region MARK: REGRAS DA GRAMÁTICA DE COMANDOS
+void CompilationEngine::compileStatements() {
+  printNonTerminalStart("statements");
+
+  //Fica em looping enquanto encontrar o início de algum comando válido
+  while (match(KEYWORD, "let") || match(KEYWORD, "if") || match(KEYWORD, "while") || match(KEYWORD, "do") || match(KEYWORD, "return")) {
+    if (match(KEYWORD, "let")) compileLet();
+    else if (match(KEYWORD, "if")) compileIf();
+    else if (match(KEYWORD, "while")) compileWhile();
+    else if (match(KEYWORD, "do")) compileDo();
+    else if (match(KEYWORD, "return")) compileReturn();
+  }
+
+  printNonTerminalEnd("statements");
+}
+//endregion
+
+//region MARK: REGRAS DA GRAMÁTICA DE RETURN
+void CompilationEngine::compileReturn() {
+  printNonTerminalStart("returnStatement");       //Abre a tag returnStatement -> identação + <returnStatement>
+  
+  //Consome a declaração de return
+  consume(KEYWORD, "return");
+
+  //Se não for ponto e virgula,  o return tem uma expressão (ex: return 1 + 2;)
+  if (!match(SYMBOL, ";")) {
+    //TODO compileExpression() no futuro
+  }
+
+  //Consome o ponto e virgula
+  consume(SYMBOL, ";");
+
+  printNonTerminalEnd("returnStatement");         //Fecha a tag returnStatement
+}
+//endregion
+
+//Esqueletos pra nao dar problema no teste
+void CompilationEngine::compileLet() {}
+void CompilationEngine::compileIf() {}
+void CompilationEngine::compileWhile() {}
+void CompilationEngine::compileDo() {}
