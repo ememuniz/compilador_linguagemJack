@@ -30,6 +30,9 @@ class CompilationEngine {
     void consume(TokenTypeList type, const std::string& expectedValue = "");  //Consome o token atual
     void compileClass();                                //Compila uma classe Jack
     void compileClassVarDec();                          //Compila uma classe com variaveis
+    void compileSubroutine();                           //Compila uma subrotina
+    void compileParameterList();                        //Compila uma lista de parametros
+    void compileSubroutineBody();                       //Compila o corpo de uma subrotina
   //endregion
 };
 

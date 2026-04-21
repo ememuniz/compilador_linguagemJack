@@ -41,7 +41,6 @@ bool CompilationEngine::match(TokenTypeList type, const std::string& value) {
 //endregion
 
 //region MARK: CONSUME()
-//consume() serve para consumir o token atual e avançar para o próximo
 void CompilationEngine::consume(TokenTypeList type, const std::string& expectedValue) {
   if (match(type)) {                                //Se o token atual corresponder ao esperado
     if (!expectedValue.empty() && tokenizer.getToken() != expectedValue) {  //Se o expectValue não estiver vazio e ele não for o token atual
@@ -76,7 +75,6 @@ void CompilationEngine::printXMLToken() {
 }
 //endregion
 
-
 //region MARK: PRINTNONTERMINALSTART()
 void CompilationEngine::printNonTerminalStart(const std::string& tag) {
   out << indent << "<" << tag << ">\n";           //out recebe a indentação mais o inicio da tag e a quebra de linha
@@ -103,11 +101,14 @@ void CompilationEngine::compileClass() {
     compileClassVarDec();                         //Chamamos a regra de classVarDec quando for lido static ou field
   }
 
+  while (match(KEYWORD, "constructor") || match(KEYWORD, "function") || match(KEYWORD, "method")) {
+    compileSubroutine();                       //Chamamos a regra de SubroutineDec quando for lido constructor, function ou method
+  }
+
   consume(SYMBOL, "}");                           //Consumimos o token "}"
   printNonTerminalEnd("class");                   //Fecha a tag class
 }
 //endregion
-
 
 //region MARK: REGRAS DA GRAMÁTICA DE CLASSVARDEC
 void CompilationEngine::compileClassVarDec() {
@@ -145,3 +146,81 @@ void CompilationEngine::compileClassVarDec() {
   printNonTerminalEnd("classVarDec");             //Fecha a tag classVarDec
 }
 //endregion
+
+//region MARK: REGRAS DA GRAMÁTICA DE SUBROUTINEDEC
+void CompilationEngine::compileSubroutine() {
+  printNonTerminalStart("subroutineDec");         //Abre a tag subroutineDec -> identação + <subroutineDec>
+
+  //Consome 'constructor', 'function' ou 'method'
+  if (match(KEYWORD, "constructor")) consume(KEYWORD, "constructor");
+  else if (match(KEYWORD, "function")) consume(KEYWORD, "function");
+  else consume(KEYWORD, "method");
+
+  //Consome o tipo de retorno (void ou tipo normal)
+  if (match(KEYWORD, "void")) consume(KEYWORD, "void");
+  else if (match(KEYWORD, "int")) consume(KEYWORD, "int");
+  else if (match(KEYWORD, "char")) consume(KEYWORD, "char");
+  else if (match(KEYWORD, "boolean")) consume(KEYWORD, "boolean");
+  else consume(IDENTIFIER);
+
+  //Consome o nome da Subrotina
+  consume(IDENTIFIER);
+
+  //Consome Parenteses e parametros
+  consume(SYMBOL, "(");
+  compileParameterList();
+  consume(SYMBOL, ")");
+
+  //Consome o corpo da função e finaliza
+  compileSubroutineBody();
+  printNonTerminalEnd("subroutineDec");           //Fecha a tag subroutineDec
+}
+//endregion
+
+//region MARK: REGRAS DA GRAMÁTICA DE PARAMETERLIST
+void CompilationEngine::compileParameterList() {
+  printNonTerminalStart("parameterList");         //Abre a tag parameterList -> identação + <parameterList>
+
+  //Começa verificando se a lista tá vazia
+  if (!match(SYMBOL, ")")) {
+
+    //Consome o tipo do primeiro parametro
+    if (match(KEYWORD, "int")) consume(KEYWORD, "int");
+    else if (match(KEYWORD, "char")) consume(KEYWORD, "char");
+    else if (match(KEYWORD, "boolean")) consume(KEYWORD, "boolean");
+    else consume(IDENTIFIER);
+
+    //Consome o nome do primeiro parametro
+    consume(IDENTIFIER);
+
+    //Enquanto tiver vírgula, tem mais parâmetros
+    while (match(SYMBOL, ",")) {
+      consume(SYMBOL, ",");
+
+      //Consome o tipo do próximo parâmetro
+      if (match(KEYWORD, "int")) consume(KEYWORD, "int");
+      else if (match(KEYWORD, "char")) consume(KEYWORD, "char");
+      else if (match(KEYWORD, "boolean")) consume(KEYWORD, "boolean");
+      else consume(IDENTIFIER);
+
+      //Consome o nome do proximo parâmetro
+      consume(IDENTIFIER);
+    }
+  }
+
+  printNonTerminalEnd("parameterList");           //Fecha a tag parameterList
+}
+//endregion
+
+//region MARK: REGRAS DA GRAMÁTICA DE SUBROUTINEBODY
+void CompilationEngine::compileSubroutineBody() {
+  printNonTerminalStart("subroutineBody");        //Abre a tag subroutineBody -> identação + <subroutineBody>
+
+  consume(SYMBOL, "{");
+
+  //TODO VARIAVEIS LOCAIS E COMANDOS AQUI
+
+  consume(SYMBOL, "}");
+  
+  printNonTerminalEnd("subroutineBody");          //Fecha a tag subroutineBody
+}
