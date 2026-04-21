@@ -311,8 +311,8 @@ TEST_CASE("Testando ferramentas auxiliares do Compilation Engine") {
   }
   //endregion
 
-  //region MARK: TESTE DO GERA XML - COMANDOS LET
-  SUBCASE("Gera XML para comandos if e while") {
+  //region MARK: TESTE DO GERA XML - COMANDO LET
+  SUBCASE("Gera XML para comando let") {
     std::ofstream outJack("temp_let.jack");
     outJack << "class Main { function void main() { let x = y; let a[i] = j; } }";
     outJack.close();
@@ -386,7 +386,93 @@ TEST_CASE("Testando ferramentas auxiliares do Compilation Engine") {
     
     CHECK(xmlGerado == xmlEsperado);
   }
+  //endregion
+
+  //region MARK: TESTE DO GERA XML - COMANDO DO
+  SUBCASE("Gera XML para comando DO") {
+    std::ofstream outJack("temp_DO.jack");
+    outJack << "class Main { function void main() { do run(x); do Output.print(y, z); } }";
+    outJack.close();
+
+    {
+      JackTokenizer tk("temp_DO.jack");
+      CompilationEngine eng(tk, "temp_DO.xml");
+      eng.compileClass();
+    }
+
+    std::ifstream xmlIn("temp_DO.xml");
+    std::stringstream buffer;
+    buffer << xmlIn.rdbuf();
+
+    std::string xmlGerado = "";
+    for (char c : buffer.str()) {
+      if (c != '\r') xmlGerado += c;
+    };
+
+    std::string xmlEsperado =
+      "<class>\n"
+      "  <keyword> class </keyword>\n"
+      "  <identifier> Main </identifier>\n"
+      "  <symbol> { </symbol>\n"
+      "  <subroutineDec>\n"
+      "    <keyword> function </keyword>\n"
+      "    <keyword> void </keyword>\n"
+      "    <identifier> main </identifier>\n"
+      "    <symbol> ( </symbol>\n"
+      "    <parameterList>\n"
+      "    </parameterList>\n"
+      "    <symbol> ) </symbol>\n"
+      "    <subroutineBody>\n"
+      "      <symbol> { </symbol>\n"
+      "      <statements>\n"
+      "        <doStatement>\n"
+      "          <keyword> do </keyword>\n"
+      "          <identifier> run </identifier>\n"
+      "          <symbol> ( </symbol>\n"
+      "          <expressionList>\n"
+      "            <expression>\n"
+      "              <term>\n"
+      "                <identifier> x </identifier>\n"
+      "              </term>\n"
+      "            </expression>\n"
+      "          </expressionList>\n"
+      "          <symbol> ) </symbol>\n"
+      "          <symbol> ; </symbol>\n"
+      "        </doStatement>\n"
+      "        <doStatement>\n"
+      "          <keyword> do </keyword>\n"
+      "          <identifier> Output </identifier>\n"
+      "          <symbol> . </symbol>\n"
+      "          <identifier> print </identifier>\n"
+      "          <symbol> ( </symbol>\n"
+      "          <expressionList>\n"
+      "            <expression>\n"
+      "              <term>\n"
+      "                <identifier> y </identifier>\n"
+      "              </term>\n"
+      "            </expression>\n"
+      "            <symbol> , </symbol>\n"
+      "            <expression>\n"
+      "              <term>\n"
+      "                <identifier> z </identifier>\n"
+      "              </term>\n"
+      "            </expression>\n"
+      "          </expressionList>\n"
+      "          <symbol> ) </symbol>\n"
+      "          <symbol> ; </symbol>\n"
+      "        </doStatement>\n"
+      "      </statements>\n"
+      "      <symbol> } </symbol>\n"
+      "    </subroutineBody>\n"
+      "  </subroutineDec>\n"
+      "  <symbol> } </symbol>\n"
+      "</class>\n";
+    
+    CHECK(xmlGerado == xmlEsperado);
+  }
   //endregion*/
+
+  
 
 
 }

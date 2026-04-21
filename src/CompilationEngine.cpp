@@ -277,7 +277,7 @@ void CompilationEngine::compileStatements() {
     } else if (kw == "while") {
       compileWhile();
     } else if (kw == "do") {
-      // compileDo(); // Implementaremos nos próximos passos
+      compileDo(); 
     } else if (kw == "return") {
       compileReturn();
     }
@@ -388,6 +388,43 @@ void CompilationEngine::compileLet() {
 }
 //endregion
 
-//Esqueletos pra nao dar problema no teste
+//region MARK: REGRAS DE GRAMÁTICA DE COMANDO DO
+void CompilationEngine::compileDo() {
+  printNonTerminalStart("doStatement");                     //Abre a tag doStatement -> identação + <doStatement>
 
-void CompilationEngine::compileDo() {}
+  consume(KEYWORD, "do");                                   //Consome a declaração de do
+  
+  consume(IDENTIFIER); 
+
+  if (match(SYMBOL, ".")) {
+    consume(SYMBOL, ".");
+    consume(IDENTIFIER);
+  }
+
+  consume(SYMBOL, "(");
+  compileExpressionList();
+  consume(SYMBOL, ")");
+
+  consume(SYMBOL, ";");
+
+  printNonTerminalEnd("doStatement");                       //Fecha a tag doStatement
+}
+//endregion
+
+//region MARK: REGRAS DE GRAMÁTICA DE EXPRESSIONLIST
+void CompilationEngine::compileExpressionList() {
+  printNonTerminalStart("expressionList");            //Abre a tag expressionList -> identação + <expressionList>
+
+  //Se o próximo token não for um parenteses de fechamento, significa que temos argumentos
+  if (!match(SYMBOL, ")")) {
+    compileExpression();                             
+
+    while (match(SYMBOL, ",")) {
+      consume(SYMBOL, ",");
+      compileExpression();
+    }
+  }
+
+  printNonTerminalEnd("expressionList");              //Fecha a tag expressionList
+}
+//endregion

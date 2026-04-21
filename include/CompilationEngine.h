@@ -42,6 +42,7 @@ class CompilationEngine {
     void compileReturn();                        //Compila uma declaração de return
     void compileExpression();                    //Compila uma expressão
     void compileTerm();                          //Compila um termo
+    void compileExpressionList();                //Compila uma lista de expressões
   //endregion
 };
 

@@ -1,0 +1,1 @@
+class Main { function void main() { do run(x); do Output.print(y, z); } }
