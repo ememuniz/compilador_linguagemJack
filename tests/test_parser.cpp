@@ -164,5 +164,64 @@ TEST_CASE("Testando ferramentas auxiliares do Compilation Engine") {
     CHECK(xmlGerado == xmlEsperado);
   }
   //endregion
-  
+
+  //region MARK: TESTE DO GERA XML - CLASSE COM BODY COM VARIAVEIS E COMANDOS
+  SUBCASE("Gera XML para variaveis locais (varDec) e comando return") {
+    std::ofstream outJack("temp_stmts.jack");
+    outJack << "class Main { function void main() { var int a, b; return; } }";
+    outJack.close();
+
+    {
+      JackTokenizer tk("temp_stmts.jack");
+      CompilationEngine eng(tk, "temp_stmts.xml");
+      eng.compileClass();
+    }
+
+    std::ifstream xmlIn("temp_stmts.xml");
+    std::stringstream buffer;
+    buffer << xmlIn.rdbuf();
+
+    std::string xmlGerado = "";
+    for (char c : buffer.str()) {
+      if (c != '\r') xmlGerado += c;
+    }
+
+    std::string xmlEsperado = 
+      "<class>\n"
+      "  <keyword> class </keyword>\n"
+      "  <identifier> Main </identifier>\n"
+      "  <symbol> { </symbol>\n"
+      "  <subroutineDec>\n"
+      "    <keyword> function </keyword>\n"
+      "    <keyword> void </keyword>\n"
+      "    <identifier> main </identifier>\n"
+      "    <symbol> ( </symbol>\n"
+      "    <parameterList>\n"
+      "    </parameterList>\n"
+      "    <symbol> ) </symbol>\n"
+      "    <subroutineBody>\n"
+      "      <symbol> { </symbol>\n"
+      "      <varDec>\n"
+      "        <keyword> var </keyword>\n"
+      "        <keyword> int </keyword>\n"
+      "        <identifier> a </identifier>\n"
+      "        <symbol> , </symbol>\n"
+      "        <identifier> b </identifier>\n"
+      "        <symbol> ; </symbol>\n"
+      "      </varDec>\n"
+      "      <statements>\n"
+      "        <returnStatement>\n"
+      "          <keyword> return </keyword>\n"
+      "          <symbol> ; </symbol>\n"
+      "        </returnStatement>\n"
+      "      </statements>\n"
+      "      <symbol> } </symbol>\n"
+      "    </subroutineBody>\n"
+      "  </subroutineDec>\n"
+      "  <symbol> } </symbol>\n"
+      "</class>\n";
+
+    CHECK(xmlGerado == xmlEsperado);
+  }
+
 }
