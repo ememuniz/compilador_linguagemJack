@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include "JackTokenizer.h"
+#include "CompilationEngine.h"
 
 //Funções para formatar os símbolos que quebram o XML
 std::string escapeXML(const std::string& text){
@@ -22,28 +23,31 @@ int main(int argc, char* argv[]){
   }
   std::string inputFile = argv[1]; //Armazena o nome do arquivo
 
+
+  //region MARK: ANALISADOR LÉXICO (Gera o arquivo tokens *T.xml)
+
   //Cria o nome do arquivo de saida
-  std::string outputFile = inputFile.substr(0, inputFile.find_last_of(".")) + "T.xml";
+  std::string tokenOutputFile = inputFile.substr(0, inputFile.find_last_of(".")) + "T.xml";
 
   //Inicia o nosso analisador e prepara o arquivo de saída
-  JackTokenizer tokenizer(inputFile);
-  std::ofstream out(outputFile);
+  JackTokenizer tokenizerTokens(inputFile);
+  std::ofstream out(tokenOutputFile);
 
   //abrir a tag
   out << "<tokens>\n";
 
   //Enquanto houver código, extrai e escreve
-  while(tokenizer.hasMoreTokens()){
-    tokenizer.advance(); //Avançar para o próximo token
+  while(tokenizerTokens.hasMoreTokens()){
+    tokenizerTokens.advance(); //Avançar para o próximo token
 
     //Se o token for vazio, apenas pula
-    if (tokenizer.tokenType() == NONE) continue;
-    std::string token = tokenizer.getToken();
+    if (tokenizerTokens.tokenType() == NONE) continue;
+    std::string token = tokenizerTokens.getToken();
 
     if (token.empty() || token.find_first_not_of(" \t\n\r\v\f") == std::string::npos){
       continue;
     }
-    switch (tokenizer.tokenType())
+    switch (tokenizerTokens.tokenType())
     {
     case KEYWORD:
       out << "<keyword> " << token << " </keyword>\n";
@@ -69,6 +73,26 @@ int main(int argc, char* argv[]){
 
   out.close();
 
-  std::cout << "Sucesso!Arquivo gerado: " << outputFile << std::endl;
+  std::cout << "Sucesso!Arquivo gerado: " << tokenOutputFile << std::endl;
+
+  //endregion
+
+  //region MARK: ANALISADOR SINTÁTICO (Gera o árvore sintática *P.xml)
+  try {
+    std::string parserOutputFile = inputFile.substr(0, inputFile.find_last_of(".")) + "P.xml";
+
+    JackTokenizer tokenizerParser(inputFile);
+
+    CompilationEngine engine(tokenizerParser, parserOutputFile);
+
+    engine.compileClass();
+
+    std::cout << "Sucesso! Arquivo sintático gerado: " << parserOutputFile << std::endl;
+  } catch (const std::exception& e) {
+    std::cerr << "\nErro durante a analise sintática de " << inputFile << ":" << std::endl;
+    std::cerr << e.what() << std::endl;
+    return 1;
+  }
+  //endregion
   return 0;  //Encerra o programa
 }
