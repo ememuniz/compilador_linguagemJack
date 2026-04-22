@@ -1,1 +1,0 @@
-class Main { function void main() { let x = 15 + (y * 2); do Output.print(-x); } }

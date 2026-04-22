@@ -1,1 +1,0 @@
-class Main { function void main() { if (x) { return; } while (y) { return; } } }
