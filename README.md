@@ -1,104 +1,121 @@
-# Analisador Léxico (JackTokenizer)
+# Front-End do Compilador Jack (Analisador Léxico e Sintático)
+Autor: Emerson Paulo Pinheiro Muniz
 
-**Autor:** Emerson Paulo Pinheiro Muniz  
-**Matrícula:** 20250013523  
+Matrícula: 20250013523
 
 ## 💻 Sobre o Projeto
+Este projeto é a implementação do Front-End completo do compilador para a linguagem Jack, correspondente às etapas de Análise Léxica e Análise Sintática da disciplina de Compiladores do curso de Engenharia da Computação da Universidade Federal do Maranhão (UFMA).
 
-Este projeto é a implementação do **Analisador Léxico (Tokenizer)** para a linguagem Jack, correspondente à primeira etapa de construção do compilador na disciplina de compiladores do curso de Engenharia da computação da Universidade Federal do Maranhão (UFMA) 
+O processo é dividido em duas grandes engrenagens principais:
 
-O objetivo deste programa é ler arquivos de código-fonte (`.jack`), ignorar ruídos (como espaços em branco, quebras de linha e comentários) e extrair os **tokens** da linguagem, classificando-os semanticamente em cinco categorias:
-* *Keywords* (Palavras-chave)
-* *Symbols* (Símbolos)
-* *Identifiers* (Identificadores)
-* *Integer Constants* (Constantes Inteiras)
-* *String Constants* (Constantes de Texto)
+### 1. Analisador Léxico (`JackTokenizer`)
+O objetivo desta etapa é ler arquivos de código-fonte (`.jack`), ignorar ruídos (como espaços em branco, quebras de linha e comentários) e extrair os tokens da linguagem, classificando-os semanticamente em cinco categorias fundamentais:
 
-Ao final do processamento, o programa gera um arquivo `.xml` estruturado com as tags correspondentes a cada token encontrado.
+`<keyword>` (Palavras-chave, ex: `class`, `if`)
 
----
+`<symbol>` (Símbolos, ex: `{`, `+`)
+
+`<identifier>` (Identificadores de variáveis, funções ou classes)
+
+`<integerConstant>` (Constantes Inteiras, `ex: 15`)
+
+`<stringConstant>` (Constantes de Texto)
+
+O resultado desta etapa é salvo em um arquivo com o sufixo `*T.xml`.
+
+### 2. Analisador Sintático (`CompilationEngine`)
+O Parser recebe os tokens gerados na etapa anterior e verifica se eles formam frases válidas de acordo com a Gramática Livre de Contexto da linguagem Jack. O resultado é a geração de uma Árvore Sintática (AST) no formato XML, que descreve a estrutura hierárquica do código.
+
+As tags geradas pelo analisador sintático agrupam os tokens em estruturas lógicas (Não-Terminais):
+
+Estrutura do Programa: `<class>`, `<classVarDec>`, `<subroutineDec>`, `<parameterList>`, `<subroutineBody>`, `<varDec>`.
+
+Comandos (Statements): `<statements>` (que agrupa os comandos de um bloco), `<letStatement>` (atribuição), `<ifStatement>` (condicional), `<whileStatement>` (laço de repetição), `<doStatement>` (chamada de função/método), `<returnStatement>` (retorno).
+
+Expressões Matemáticas/Lógicas: `<expression>`, `<term>` (operandos, que podem incluir chamadas de função ou variáveis), `<expressionList>` (argumentos passados para uma função).
+
+O resultado desta etapa é salvo em um arquivo com o sufixo `*P.xml`.
+
+## 📁 Estrutura de Pastas
+Para manter a organização do código (padrão profissional em C++), o projeto está estruturado da seguinte forma:
+
+`/src`: Contém os códigos-fonte (`.cpp`).
+
+`/include`: Contém os cabeçalhos das classes (`.h`).
+
+`/gabarito`: Contém os arquivos XML originais fornecidos pelo curso Nand2Tetris para validação.
+
+Raiz do projeto: Arquivos de teste da linguagem (`.jack`) e executáveis.
 
 ## 🚀 Execução Principal (`main.cpp`)
+O programa principal é responsável por ler o arquivo `.jack` na pasta raiz e gerar ambos os arquivos XML (Léxico e Sintático).
 
-O programa principal é responsável por ler o arquivo `.jack` e gerar o arquivo `.xml` final.
-
-### Como Compilar e Executar
-
-**1. Compilação:**
-No terminal, dentro da pasta do projeto, execute:
-```bash
-g++ main.cpp JackTokenizer.cpp -o JackAnalyzer
+Como Compilar e Executar
+### 1. Compilação:
+No terminal, dentro da raiz do projeto, execute:
+```Bash
+g++ src/main.cpp src/JackTokenizer.cpp src/CompilationEngine.cpp -Iinclude -o JackAnalyzer
 ```
 
-**2. Execução (exemplo com o arquivo Main.jack):**
+(A flag `-Iinclude` avisa ao compilador para procurar os arquivos `.h` dentro da pasta `include`)
 
+### 2. Execução (exemplo com o arquivo `Main.jack`):
 Para rodar o analisador, passe o nome do arquivo .jack que você deseja traduzir como argumento.
-Por exemplo, para processar um arquivo chamado Main.jack:
 
 No Windows:
-
-```bash
-./JackAnalyzer.exe Main.jack
+```DOS
+.\JackAnalyzer.exe Main.jack
 ```
-
 No Linux/Mac:
-```bash
+```Bash
 ./JackAnalyzer Main.jack
 ```
-
 Saída Esperada no Terminal:
 
-```plaintext
-Sucesso! Arquivo gerado: MainT.xml
+```Plaintext
+Sucesso! Arquivo lexico gerado: MainT.xml
+Sucesso! Arquivo sintatico gerado: MainP.xml
 ```
-
-Se o processo for bem sucedido o programa criará um arquivo chamado `MainT.xml` na pasta do projeto, contendo todos os tokens extraídos e formatados.
-
-
 ## 🧪 Estrutura de Testes Automatizados
-Este projeto utiliza o framework doctest para garantir a confiabilidade do código em diferentes níveis. Os testes foram divididos em dois arquivos separados para facilitar a organização.
+Este projeto utiliza o framework doctest para garantir a confiabilidade do código.
 
-### 1. Testes de Unidade (test.cpp)
-O que faz: Este arquivo testa a "engrenagem" do sistema, ou seja, as funções internas da classe JackTokenizer. Ele verifica se o código consegue avançar corretamente pelos caracteres, pular comentários (de linha // e de bloco /**/), ignorar espaços e identificar o tipo exato de cada token isoladamente.
+### 1. Testes de Comparação XML Fim a Fim (test_comparacao.cpp)
+Este teste atua como o corretor automático final. Ele abre os arquivos gerados pelo seu compilador (`*T.xml` e `*P.xml`), remove eventuais problemas de formatação de quebra de linha (Windows vs Linux) e compara o conteúdo com os gabaritos oficiais da pasta `/gabarito`.
 
-**Como compilar e rodar:**
+⚠️ Pré-requisito: Antes de rodar este teste, você deve executar o programa principal (`JackAnalyzer`) para que os arquivos XML sejam gerados na raiz do projeto.
 
-```bash
+Como compilar e rodar:
+
+```Bash
 # Compilação
-g++ test.cpp JackTokenizer.cpp -o testes
+g++ testes.cpp -Iinclude -o TesteXML
 
 # Execução (Windows)
-./testes.exe
-
-# Execução (Linux/Mac)
-./testes
-```
-
-**Saída Esperada no Terminal:**
-
-```plaintext
-[doctest] doctest version is "2.4.11"
-[doctest] run with "--help" for options
-===============================================================================
-[doctest] test cases:  X |  X passed | 0 failed | 0 skipped
-[doctest] assertions:  Y |  Y passed | 0 failed |
-[doctest] Status: SUCCESS!
-```
-
-### 2. Testes de Comparação / Fim a Fim (test_comparacao.cpp)
-O que faz: Este arquivo atua como o corretor final. Ele não olha para a lógica interna, mas sim para o resultado prático. O teste abre os arquivos .xml gerados pelo JackAnalyzer, limpa as diferenças de quebra de linha (Windows vs Linux) e compara o conteúdo exato com os arquivos `.xml` oficiais de gabarito fornecidos pelo curso Nand2Tetris. Se o XML gerado for 100% idêntico ao gabarito, o teste passa.
-
-Pré-requisito: Antes de rodar este teste, certifique-se de que o programa principal já processou os arquivos `.jack` e gerou os respectivos arquivos `*T.xml` na pasta raiz, e que os gabaritos oficiais estão dentro da pasta `originais/`.
-
-**Como compilar e rodar:**
-
-```bash
-# Compilação
-g++ test_comparacao.cpp -o TesteXML
-
-# Execução (Windows)
-./TesteXML.exe
+.\TesteXML.exe
 
 # Execução (Linux/Mac)
 ./TesteXML
+```
+Saída Esperada no Terminal:
+
+```Plaintext
+[doctest] doctest version is "2.4.11"
+[doctest] run with "--help" for options
+===============================================================================
+[doctest] test cases:  2 |  2 passed | 0 failed | 0 skipped
+[doctest] assertions:  6 |  6 passed | 0 failed |
+[doctest] Status: SUCCESS!
+```
+### 2. Testes de Unidade Internos (test.cpp - Opcional)
+(Se você manteve aquele arquivo de testes unitários apenas para o Tokenizer)
+Verifica as "engrenagens" internas da classe JackTokenizer, testando se ela consegue avançar corretamente pelos caracteres, pular comentários isolados e ignorar espaços brancos.
+
+Bash
+# Compilação
+```
+g++ src/test.cpp src/JackTokenizer.cpp -Iinclude -o testes_unidade
+```
+# Execução
+```
+./testes_unidade
 ```
