@@ -472,6 +472,98 @@ TEST_CASE("Testando ferramentas auxiliares do Compilation Engine") {
   }
   //endregion*/
 
+  //region MARK: COMANDOS E EXPRESSÕES (TESTE FINAL)
+  SUBCASE("Gera XML para comandos e expressões") {
+    std::ofstream outJack("temp_final.jack");
+    outJack << "class Main { function void main() { let x = 15 + (y * 2); do Output.print(-x); } }";
+    outJack.close();
+
+    {
+      JackTokenizer tk("temp_final.jack");
+      CompilationEngine eng(tk, "temp_final.xml");
+      eng.compileClass();
+    }
+
+    std::ifstream xmlIn("temp_final.xml");
+    std::stringstream buffer;
+    buffer << xmlIn.rdbuf();
+
+    std::string xmlGerado = "";
+    for (char c : buffer.str()) {
+      if (c != '\r') xmlGerado += c;
+    };
+
+    std::string xmlEsperado =
+      "<class>\n"
+      "  <keyword> class </keyword>\n"
+      "  <identifier> Main </identifier>\n"
+      "  <symbol> { </symbol>\n"
+      "  <subroutineDec>\n"
+      "    <keyword> function </keyword>\n"
+      "    <keyword> void </keyword>\n"
+      "    <identifier> main </identifier>\n"
+      "    <symbol> ( </symbol>\n"
+      "    <parameterList>\n"
+      "    </parameterList>\n"
+      "    <symbol> ) </symbol>\n"
+      "    <subroutineBody>\n"
+      "      <symbol> { </symbol>\n"
+      "      <statements>\n"
+      "        <letStatement>\n"
+      "          <keyword> let </keyword>\n"
+      "          <identifier> x </identifier>\n"
+      "          <symbol> = </symbol>\n"
+      "          <expression>\n"
+      "            <term>\n"
+      "              <integerConstant> 15 </integerConstant>\n"
+      "            </term>\n"
+      "            <symbol> + </symbol>\n"
+      "            <term>\n"
+      "              <symbol> ( </symbol>\n"
+      "              <expression>\n"
+      "                <term>\n"
+      "                  <identifier> y </identifier>\n"
+      "                </term>\n"
+      "                <symbol> * </symbol>\n"
+      "                <term>\n"
+      "                  <integerConstant> 2 </integerConstant>\n"
+      "                </term>\n"
+      "              </expression>\n"
+      "              <symbol> ) </symbol>\n"
+      "            </term>\n"
+      "          </expression>\n"
+      "          <symbol> ; </symbol>\n"
+      "        </letStatement>\n"
+      "        <doStatement>\n"
+      "          <keyword> do </keyword>\n"
+      "          <identifier> Output </identifier>\n"
+      "          <symbol> . </symbol>\n"
+      "          <identifier> print </identifier>\n"
+      "          <symbol> ( </symbol>\n"
+      "          <expressionList>\n"
+      "            <expression>\n"
+      "              <term>\n"
+      "                <symbol> - </symbol>\n"
+      "                <term>\n"
+      "                  <identifier> x </identifier>\n"
+      "                </term>\n"
+      "              </term>\n"
+      "            </expression>\n"
+      "          </expressionList>\n"
+      "          <symbol> ) </symbol>\n"
+      "          <symbol> ; </symbol>\n"
+      "        </doStatement>\n"
+      "      </statements>\n"
+      "      <symbol> } </symbol>\n"
+      "    </subroutineBody>\n"
+      "  </subroutineDec>\n"
+      "  <symbol> } </symbol>\n"
+      "</class>\n";
+    
+    CHECK(xmlGerado == xmlEsperado);
+  }
+  //endregion*/
+
   
 
 

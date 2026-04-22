@@ -72,6 +72,8 @@ void CompilationEngine::printXMLToken() {
     case KEYWORD:         out << indent << "<keyword> " << token << " </keyword>\n"; break;
     case IDENTIFIER:      out << indent << "<identifier> " << token << " </identifier>\n"; break;
     case SYMBOL:          out << indent << "<symbol> " << escapeXML(token) << " </symbol>\n"; break;
+    case INT_CONST:       out << indent << "<integerConstant> " << token << " </integerConstant>\n"; break;
+    case STRING_CONST:    out << indent << "<stringConstant> " << token << " </stringConstant>\n"; break;
     default: break;
   }
 }
@@ -352,7 +354,13 @@ void CompilationEngine::compileWhile() {
 void CompilationEngine::compileExpression() {
   printNonTerminalStart("expression");            //Abre a tag expression -> identação + <expression>
   
-  compileTerm();                                  //TODO compileTerm() no futuro
+  compileTerm();
+  
+  // Enquanto o token atual for um operador (+, -, *, /, &, |, <, >, =)
+  while (match(SYMBOL, "+") || match(SYMBOL, "-") || match(SYMBOL, "*") || match(SYMBOL, "/") || match(SYMBOL, "&") || match(SYMBOL, "|") || match(SYMBOL, "<") || match(SYMBOL, ">") || match(SYMBOL, "=")) {
+    consume(SYMBOL);
+    compileTerm();
+  }
 
   printNonTerminalEnd("expression");              //Fecha a tag expression
 }
@@ -361,7 +369,55 @@ void CompilationEngine::compileExpression() {
 //region MARK: REGRAS DE GRAMÁTICA DE TERMOS
 void CompilationEngine::compileTerm() {
   printNonTerminalStart("term");                  //Abre a tag term -> identação + <term>
-  consume(IDENTIFIER);                            //Consome o identificador
+
+  if (match(INT_CONST)) {
+    consume(INT_CONST);                           //Se for um número inteiro, consuma com o tipo INT_CONST
+  }
+  else if (match(STRING_CONST)){
+    consume(STRING_CONST);                        //Se for uma string, consuma com o tipo STRING_CONST
+  }
+  else if (match(KEYWORD, "true") || match(KEYWORD, "false") || match(KEYWORD, "null") || match(KEYWORD, "this")) {
+    consume(KEYWORD);                             //Se for uma keyword, consuma com o tipo KEYWORD
+  }                                               //Um termo so pode ser keyword se for true, false, null ou this
+  else if (match(SYMBOL, "-") || match(SYMBOL, "~")) {
+    consume(SYMBOL);                              //Se for um sinal, consuma com o tipo SYMBOL
+    compileTerm();                                //RECURSIVIDADE - necessaria pq é um operador unário
+  }
+  else if (match(SYMBOL, "(")) {
+    consume(SYMBOL, "(");                         //Se for um parenteses de abertura, consuma com o tipo SYMBOL
+    compileExpression();                          //TODO compileExpression() no futuro - traz a expressão
+    consume(SYMBOL, ")");                         //Consome o parenteses de fechamento
+  }
+  else if (match(IDENTIFIER)) {
+    consume(IDENTIFIER);                          //Se for um identificador, consuma com o tipo IDENTIFIER
+
+    //Se for um identificado , ele pode ser de um array (varName[expression]), chamada de uma função (funcName(expressionList)), chamada de método de classe (className.methodName(expressionList)) ou de uma variável (varName)
+
+    //Se for um Array
+    if (match(SYMBOL, "[")) {
+      consume(SYMBOL, "[");
+      compileExpression();
+      consume(SYMBOL, "]");
+    }
+
+    //Se for uma Função
+    else if (match(SYMBOL, "(")) {
+      consume(SYMBOL, "(");
+      compileExpressionList();
+      consume(SYMBOL, ")");
+    }
+
+    //Se for um Método de classe 
+    else if (match(SYMBOL, ".")) {
+      consume(SYMBOL, ".");
+      consume(IDENTIFIER);
+      consume(SYMBOL, "(");
+      compileExpressionList();
+      consume(SYMBOL, ")");
+    }
+    //Se não for nada das anteriores, significa que é uma variável, o identificador é suficiente
+  }
+
   printNonTerminalEnd("term");                    //Fecha a tag term
 }
 //endregion
