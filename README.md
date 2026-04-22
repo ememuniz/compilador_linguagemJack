@@ -88,13 +88,13 @@ Como compilar e rodar:
 
 ```Bash
 # Compilação
-g++ testes.cpp -Iinclude -o TesteXML
+ g++ .\tests\test_comparacao.cpp -o TesteComparacao.exe
 
 # Execução (Windows)
-.\TesteXML.exe
+.\TesteComparacao.exe
 
 # Execução (Linux/Mac)
-./TesteXML
+./TesteComparacao
 ```
 Saída Esperada no Terminal:
 
@@ -106,16 +106,17 @@ Saída Esperada no Terminal:
 [doctest] assertions:  6 |  6 passed | 0 failed |
 [doctest] Status: SUCCESS!
 ```
-### 2. Testes de Unidade Internos (test.cpp - Opcional)
-(Se você manteve aquele arquivo de testes unitários apenas para o Tokenizer)
+### 2. Testes de Unidade Internos 
 Verifica as "engrenagens" internas da classe JackTokenizer, testando se ela consegue avançar corretamente pelos caracteres, pular comentários isolados e ignorar espaços brancos.
 
 Bash
 # Compilação
 ```
-g++ src/test.cpp src/JackTokenizer.cpp -Iinclude -o testes_unidade
+g++ -Iinclude .\tests\test_parser.cpp .\src\JackTokenizer.cpp .\src\CompilationEngine.cpp -o TesteParser
+g++ -Iinclude .\tests\test_scanner.cpp .\src\JackTokenizer.cpp .\src\CompilationEngine.cpp -o TesteScanner
 ```
 # Execução
 ```
-./testes_unidade
+.\TesteParser.exe 
+.\TesteScanner.exe
 ```
