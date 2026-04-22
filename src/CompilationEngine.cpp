@@ -298,7 +298,7 @@ void CompilationEngine::compileReturn() {
 
   //Se não for ponto e virgula,  o return tem uma expressão (ex: return 1 + 2;)
   if (!match(SYMBOL, ";")) {
-    //TODO compileExpression() no futuro
+    compileExpression();
   }
 
   //Consome o ponto e virgula
@@ -314,7 +314,7 @@ void CompilationEngine::compileIf() {
 
   consume(KEYWORD, "if");                         //Consome a declaração de if
   consume(SYMBOL, "(");                           //Consome o parenteses de abertura
-  compileExpression();                            //TODO compileExpression() no futuro - traz a condição
+  compileExpression();                            
   consume(SYMBOL, ")");                           //Consome o parenteses de fechamento
 
   consume(SYMBOL, "{");
@@ -339,7 +339,7 @@ void CompilationEngine::compileWhile() {
 
   consume(KEYWORD, "while");                      //Consome a declaração de while
   consume(SYMBOL, "(");                           //Consome o parenteses de abertura
-  compileExpression();                            //TODO compileExpression() no futuro - traz a condição
+  compileExpression();                            
   consume(SYMBOL, ")");                           //Consome o parenteses de fechamento
 
   consume(SYMBOL, "{");
@@ -385,7 +385,7 @@ void CompilationEngine::compileTerm() {
   }
   else if (match(SYMBOL, "(")) {
     consume(SYMBOL, "(");                         //Se for um parenteses de abertura, consuma com o tipo SYMBOL
-    compileExpression();                          //TODO compileExpression() no futuro - traz a expressão
+    compileExpression();                          
     consume(SYMBOL, ")");                         //Consome o parenteses de fechamento
   }
   else if (match(IDENTIFIER)) {

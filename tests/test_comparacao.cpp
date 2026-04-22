@@ -25,8 +25,8 @@ std::string readAndNormalize(const std::string& caminho) {
   return conteudoLimpo;
 }
 
-
-TEST_CASE("Comparando XML gerado com o Gabarito do Nand2Tetris") {
+//region MARK: TESTES DO ANALISADOR LÉXICO - TOKENIZER
+TEST_CASE("Analisador Léxico - Comparando *T.xml com o gabarito") {
   SUBCASE("Testando arquivo MainT.xml") {
     std::string meuXML = readAndNormalize("MainT.xml");
     std::string gabaritoXML = readAndNormalize("gabarito/MainT.xml");
@@ -45,3 +45,27 @@ TEST_CASE("Comparando XML gerado com o Gabarito do Nand2Tetris") {
     CHECK(meuXML == gabaritoXML);
   }
 }
+//endregion
+
+//region MARK: TESTES DO ANALISADOR SINTÁTICO - PARSER
+TEST_CASE("Analisador Sintático - Comparando *P.xml com o Gabarito"){
+  SUBCASE("Testando arquivo MainP.xml"){
+    std::string meuXML = readAndNormalize("MainP.xml");
+    std::string gabaritoXML = readAndNormalize("gabarito/Main.xml");
+    CHECK(meuXML == gabaritoXML);
+  }
+
+  SUBCASE("Testando arquivo SquareP.xml"){
+    std::string meuXML = readAndNormalize("SquareP.xml");
+    std::string gabaritoXML = readAndNormalize("gabarito/Square.xml");
+    CHECK(meuXML == gabaritoXML);
+  }
+
+  SUBCASE("Testando arquivo SquareGameP.xml"){
+    std::string meuXML = readAndNormalize("SquareGameP.xml");
+    std::string gabaritoXML = readAndNormalize("gabarito/SquareGame.xml");
+    CHECK(meuXML == gabaritoXML);
+  }
+}
+//endregion
+
