@@ -1,33 +1,32 @@
 #ifndef COMPILATION_ENGINE_H
 #define COMPILATION_ENGINE_H
 
-//region MARK: INCLUSÃO DE BIBLIOTECAS
+//CONTAINER MARK: INCLUSÃO DE BIBLIOTECAS
+#pragma once              
 #include "JackTokenizer.h"
 #include <fstream>
 #include <string>
 #include <stdexcept>
-//endregion
 
 class CompilationEngine {
-  //region MARK: DECLARAÇÕES PRIVATE 
+  //CONTAINER MARK: DECLARAÇÕES PRIVATE 
   private:
-    JackTokenizer& tokenizer;                           //Armazena o tokenizer
-    std::ofstream out;                                  //Armazena o arquivo de saída
-    std::string indent;                                 //Armazena a identação
-    void advance();                                     //Funcao para avançar na leitura
-    std::string escapeXML (const std::string& text);    //Formatam os simbolos que quebram o XML
-    void printXMLToken();                               //escreve o token no arquivo de saída
-    void printNonTerminalStart(const std::string& tag); //escreve a tag de inicio de uma declaração
-    void printNonTerminalEnd(const std::string& tag);   //escreve a tag de fim de uma declaração
-  //endregion
+    JackTokenizer& tokenizer;                                     //Armazena o tokenizer
+    std::ofstream outFile;                                        //Armazena o arquivo de saída
+    std::string indent;                                      //Armazena a identação
+    
+    void writeXML(const std::string& text);                       //Função para escrever no arquivo XML
+    void process(TokenType2 expectedType);                        //Função para verificar se é o token esperado e avança
+    void processSymbol(const std::string& expectedSymbol);        //Função para verificar se é o símbolo esperado e avança
+    void processKeyword(const std::string& expectedKeyword);      //Função para verificar se é a keyword esperada e avança
+    std::string escapeXml(const std::string& value); // Para lidar com <, >, & e "
 
-  //region MARK: DECLARAÇÕES PÚBLICAS
+
+  //CONTAINER MARK: DECLARAÇÕES PÚBLICAS
   public:
-    CompilationEngine(JackTokenizer& tokenizer, const std::string& outputFile);
+    CompilationEngine(JackTokenizer& tokenizer, const std::string& outputFilename);
     ~CompilationEngine();
-    bool match(TokenType type);              //O token atual corresponde ao esperado?
-    bool match(TokenType type, const std::string& value);  //value e type correspondem ao token atual?
-    void consume(TokenType type, const std::string& expectedValue = "");  //Consome o token atual
+
     void compileClass();                         //Compila uma classe Jack
     void compileClassVarDec();                   //Compila uma classe com variaveis
     void compileSubroutine();                    //Compila uma subrotina- funções, metodos e construtores

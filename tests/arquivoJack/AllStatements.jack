@@ -1,0 +1,11 @@
+class Main {
+    function void test() {
+        let x = 1;
+        do Output.print();
+        if (true) {
+        } else {
+        }
+        while (false) {
+        }
+    }
+}
