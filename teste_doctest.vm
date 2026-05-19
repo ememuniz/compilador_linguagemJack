@@ -1,0 +1,5 @@
+push constant 5
+pop local 1
+add
+call Math.abs 1
+return
