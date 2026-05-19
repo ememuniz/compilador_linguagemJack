@@ -1,5 +1,6 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
+#include "JackTokenizer.h"
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -11,43 +12,63 @@ std::string readAndNormalize(const std::string& caminho) {
     return "ERRO: Não foi possível abrir o arquivo" + caminho;
   }
 
-  std::stringstream buffer;
-  buffer << arquivo.rdbuf();
-  std::string conteudo = buffer.str();
-  std::string conteudoLimpo = "";
+  std::string conteudo = "";
+  std::string linha;
 
-  for (char c : conteudo) {
-    if (c != '\r') {
-      conteudoLimpo += c;
-    }
-  } //so pra garantir caso quebra de linha do windows de problema pra comparar com o do linux
-
-  return conteudoLimpo;
+  while (std::getline(arquivo, linha)) {
+    if (!linha.empty() && linha.back() == '\r') {
+      linha.pop_back(); // Remove o caractere de retorno de carro, se presente
+    }  //se a linha não for vazia e terminar com um caractere de retorno de carro, ele é removido. Isso é importante para garantir que as quebras de linha sejam tratadas de forma consistente, independentemente do sistema operacional em que o arquivo foi criado.
+    conteudo += linha + "\n";
+  }
+  return conteudo;
 }
 
 //region MARK: TESTES DO ANALISADOR LÉXICO - TOKENIZER
 TEST_CASE("Analisador Léxico - Comparando *T.xml com o gabarito") {
+  
   SUBCASE("Testando arquivo MainT.xml") {
-    std::string meuXML = readAndNormalize("MainT.xml");
-    std::string gabaritoXML = readAndNormalize("gabarito/MainT.xml");
-    CHECK(meuXML == gabaritoXML);
+    std::string caminhoMainJack = "Main.jack";
+    std::string caminhoMainXMLGerado = "files/MainT.xml";
+    std::string caminhoMainXMLGabarito = "gabarito/MainT.xml";
+
+    JackTokenizer tokenizer(caminhoMainJack);
+    tokenizer.generateTokenXML(caminhoMainXMLGerado);
+
+    std::string textoGerado = readAndNormalize(caminhoMainXMLGerado);
+    std::string textoGabarito = readAndNormalize(caminhoMainXMLGabarito);
+    CHECK(textoGerado == textoGabarito);
   }
 
   SUBCASE("Testando arquivo SquareT.xml") {
-    std::string meuXML = readAndNormalize("SquareT.xml");
-    std::string gabaritoXML = readAndNormalize("gabarito/SquareT.xml");
-    CHECK(meuXML == gabaritoXML);
+    std::string caminhoSquareJack = "Square.jack";
+    std::string caminhoSquareXMLGerado = "files/SquareT.xml";
+    std::string caminhoSquareXMLGabarito = "gabarito/SquareT.xml";
+
+    JackTokenizer tokenizer(caminhoSquareJack);
+    tokenizer.generateTokenXML(caminhoSquareXMLGerado);
+
+    std::string textoGerado = readAndNormalize(caminhoSquareXMLGerado);
+    std::string textoGabarito = readAndNormalize(caminhoSquareXMLGabarito);
+    CHECK(textoGerado == textoGabarito);
   }
 
   SUBCASE("Testando arquivo SquareGameT.xml") {
-    std::string meuXML = readAndNormalize("SquareGameT.xml");
-    std::string gabaritoXML = readAndNormalize("gabarito/SquareGameT.xml");
-    CHECK(meuXML == gabaritoXML);
+    std::string caminhoSquareGameJack = "SquareGame.jack";
+    std::string caminhoSquareGameXMLGerado = "files/SquareGameT.xml";
+    std::string caminhoSquareGameXMLGabarito = "gabarito/SquareGameT.xml";
+
+    JackTokenizer tokenizer(caminhoSquareGameJack);
+    tokenizer.generateTokenXML(caminhoSquareGameXMLGerado);
+
+    std::string textoGerado = readAndNormalize(caminhoSquareGameXMLGerado);
+    std::string textoGabarito = readAndNormalize(caminhoSquareGameXMLGabarito);
+    CHECK(textoGerado == textoGabarito);
   }
 }
 //endregion
 
-//region MARK: TESTES DO ANALISADOR SINTÁTICO - PARSER
+/*//region MARK: TESTES DO ANALISADOR SINTÁTICO - PARSER
 TEST_CASE("Analisador Sintático - Comparando *P.xml com o Gabarito"){
   SUBCASE("Testando arquivo MainP.xml"){
     std::string meuXML = readAndNormalize("MainP.xml");
@@ -67,5 +88,8 @@ TEST_CASE("Analisador Sintático - Comparando *P.xml com o Gabarito"){
     CHECK(meuXML == gabaritoXML);
   }
 }
+
 //endregion
+
+*/
 

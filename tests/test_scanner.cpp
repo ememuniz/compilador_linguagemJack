@@ -2,6 +2,7 @@
 #include "doctest.h"
 #include "JackTokenizer.h"
 
+//CONTAINER MARK: VARIÁVEIS DE TESTE
 std::string TESTFILE = "files/test_codigo.jack";
 std::string TESTSYMBOL = "files/test_symbol.jack";
 std::string TESTNUMBER = "files/test_number.jack";
@@ -9,18 +10,19 @@ std::string TESTSTRING = "files/test_string.jack";
 std::string TESTWORDS = "files/test_words.jack";
 std::string TESTCOMMENTS = "files/test_comentarios.jack";
 
-//Teste para verificar se o tokenizer leu o arquivo certo
+//CONTAINER MARK: TESTE DE LEITURA DE ARQUIVOS
 TEST_CASE("Testando a leitura de arquivos"){
   JackTokenizer tokenizer(TESTFILE); //Cria um tokenizer com o arquivo de teste
-  CHECK(tokenizer.getCode() == "class Main{ }"); //Verifica se o tokenizer leu o arquivo certo
+  CHECK(tokenizer.hasMoreTokens() == true); //Verifica se o texto foi lido todo.
+  CHECK(tokenizer.getToken() == "class");    //Verifica se o primeiro token foi lido
+  CHECK(tokenizer.tokenType() == KEYWORD);   //Verifica se o token lido foi uma keyword
 }
 
-//Teste para verificar se os simbolos estão sendo lidos corretamente
+//CONTAINER MARK: TESTE DE RECONHECIMENTO DE SIMBOLOS
 TEST_CASE("Testando o reconhecimento de Simbolos"){
   JackTokenizer tokenizer(TESTSYMBOL);          //Cria um tokenizer com o arquivo de teste
   CHECK(tokenizer.hasMoreTokens() == true);     //Verifica se o texto foi lido todo.  
 
-  tokenizer.advance();                          //Avança para o primeiro token e armazena ele e seu tipo em suas respectivas variáveis
   CHECK(tokenizer.getToken() == "{");           //Verifica se o primeiro token foi lido
   CHECK(tokenizer.tokenType() == SYMBOL); 
   
@@ -33,11 +35,10 @@ TEST_CASE("Testando o reconhecimento de Simbolos"){
   CHECK(tokenizer.tokenType() == SYMBOL);       //Verifica se o token lido foi um simbolo
 }
 
-//Teste para verificar se os números estão sendo lidos corretamente
+//CONTAINER MARK: TESTE DE RECONHECIMENTO DE NÚMEROS
 TEST_CASE("Testando o reconhecimento de Números"){
   JackTokenizer tokenizer(TESTNUMBER);         //Cria um tokenizer com o arquivo de teste
-
-  tokenizer.advance();                         //Avança para o primeiro token e armazena ele e seu tipo em suas respectivas variáveis
+                        //Avança para o primeiro token e armazena ele e seu tipo em suas respectivas variáveis
   CHECK(tokenizer.getToken() == "123");        //Verifica se o primeiro token foi lido
   CHECK(tokenizer.tokenType() == INT_CONST);   //Verifica se o token lido foi um inteiro
 
@@ -46,11 +47,10 @@ TEST_CASE("Testando o reconhecimento de Números"){
   CHECK(tokenizer.tokenType() == INT_CONST);   //Verifica se o token lido foi um inteiro
 }
 
-//Teste para verificar se as letras estão sendo lidas corretamente
+//CONTAINER MARK: TESTE DE RECONHECIMENTO DE STRINGS
 TEST_CASE("Testando o reconhecimento de Strings"){
   JackTokenizer tokenizer(TESTSTRING);         //Cria um tokenizer com o arquivo de teste
 
-  tokenizer.advance();                         //Avança para o primeiro token e armazena ele e seu tipo em suas respectivas variáveis
   CHECK(tokenizer.getToken() == "ola mundo");  //Verifica se o primeiro token foi lido
   CHECK(tokenizer.tokenType() == STRING_CONST); //Verifica se o token lido foi uma string 
 
@@ -59,11 +59,10 @@ TEST_CASE("Testando o reconhecimento de Strings"){
   CHECK(tokenizer.tokenType() == STRING_CONST); //Verifica se o token lido foi uma string
 }
 
-//Teste para verificar se as palavras chave e os identificadores estão sendo lidos corretamentes
+//CONTAINER MARK: TESTE DE RECONHECIMENTO DE PALAVRAS E KEYWORDS
 TEST_CASE("Testando o reconhecimento de Palavras e Keywords"){
   JackTokenizer tokenizer(TESTWORDS);          //Cria um tokenizer com o arquivo de teste
-
-  tokenizer.advance();                         //Avança para o primeiro token e armazena ele e seu tipo em suas respectivas variáveis
+  
   CHECK(tokenizer.getToken() == "class");      //Verifica se o primeiro token foi lido
   CHECK(tokenizer.tokenType() == KEYWORD);     //Verifica se o token lido foi uma keyword
 
@@ -80,11 +79,10 @@ TEST_CASE("Testando o reconhecimento de Palavras e Keywords"){
   CHECK(tokenizer.tokenType() == IDENTIFIER);  //Verifica se o token lido foi um identificador
 }
 
-//Teste para ver se os cometarios estão sendo removidos
+//CONTAINER MARK: TESTE DE REMOÇÃO DE COMENTÁRIOS
 TEST_CASE("Testando a remoção de Comentários"){
   JackTokenizer tokenizer(TESTCOMMENTS);       //Cria um tokenizer com o arquivo de teste
-  
-  tokenizer.advance();
+
   CHECK(tokenizer.getToken() == "class");      
   tokenizer.advance();
   CHECK(tokenizer.getToken() == "Main");
@@ -92,5 +90,6 @@ TEST_CASE("Testando a remoção de Comentários"){
   CHECK(tokenizer.getToken() == "{");
   tokenizer.advance();
   CHECK(tokenizer.getToken() == "}");
+  tokenizer.advance();
   CHECK(tokenizer.hasMoreTokens() == false);
 }

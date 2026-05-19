@@ -2,163 +2,203 @@
 #include <fstream> //Biblioteca que le o arquivo
 #include <sstream> //Biblioteca que manipula blocos de texto 
 #include <cctype>  //Biblioteca que trabalha com caracteres e tem funcoes para trabalhar com eles
+#include <stdexcept> //Biblioteca para lançar exceções
+#include <algorithm> //Biblioteca para usar funções de manipulação de strings
 
-//Construtor da classe JackTokenizer
-JackTokenizer::JackTokenizer(std::string filename){
-  std::ifstream file(filename); //Abre o arquivo
 
-  if (file.is_open()){
-    std::stringstream buffer; //Cria um buffer para armazenar o conteudo do arquivo
-    buffer << file.rdbuf(); //Armazena o conteudo do arquivo no buffer
-    input_code = buffer.str(); //Transforma o buffer em uma string e salva
-    file.close(); //Fecha o arquivo
-  } else {
-    input_code = ""; // Se der erro, fica vazio
-  }
-  removeComments();
+//CONTAINER MARK: CONSTRUTOR JACKTOKENIZER
+JackTokenizer::JackTokenizer(const std::string& filename) {
+  currentTokenIndex = 0;                                                  //O token atual começa na posição 0
+  std::ifstream file(filename);                                           //Abre o arquivo
+  if (!file.is_open()){
+    throw std::runtime_error("ERRO: Não foi possível abrir o arquivo " + filename); 
+  }                                                                       //Lança um erro se o arquivo não puder ser aberto
+  std::stringstream buffer;                                               //Cria um buffer para armazenar o conteudo do arquivo
+  buffer << file.rdbuf();                                                 //Armazena o conteudo do arquivo no buffer
+  std::string sourceCode = buffer.str();                                  //Transforma o buffer em uma string e salva
+  file.close();                                                           //Fecha o arquivo
+  this->input_code = sourceCode;                                          //Armazena o código do arquivo na variável input_code
 
-  //variaveis
-  position = 0;               //Armazena a posicao atual do arquivo, caractere a caractere
-  currentToken = "";          //Armazena o token atual
-  currentTokenType = NONE;    //Armazena o tipo de token atual
+  tokenize(sourceCode);                                                   //Chama a função para tokenizar o código do arquivo
 }
 
-//Função para verificar se leu o arquivo todo
-bool JackTokenizer::hasMoreTokens(){return position < input_code.length();} //Retorna True se a posição atual for menor que o tamanho total do arquivo. Se nao, retorna False
+//CONTAINER MARK: HASMORETOKENS
+bool JackTokenizer::hasMoreTokens() const {
+  return currentTokenIndex < tokens.size();
+}                                                                         //Verifica se ainda há tokens para serem lidos
 
-
+//CONTAINER MARK: ADVANCE
 void JackTokenizer::advance(){
-  currentToken = "";          //Limpa o token atual
-
-  while(position < input_code.length() && input_code[position] == ' '){
-    position++;
-  }                           //Enquanto ainda tiver caracteres a serem lidos e for um espaço, avance.
-
-  if (!hasMoreTokens()) return; //Se ja estiver terminado o texto do arquivo, finalize.
-
-  //Variáveis de armazenamento
-  char c = input_code[position];                  //Armazena o caractere na posicao atual
-
-  // SIMBOLOS
-  std::string symbols = "{}()[].,;+-*/&|<>=~";    //Armazena os simbolos
-  if (symbols.find(c) != std::string::npos){     //Se o caractere atual for um simbolo
-    currentToken = c;                            //Adiciona o caractere ao token atual
-    //currentToken = std::string(1, c-1);
-    currentTokenType = SYMBOL;                   //Define o tipo de token atual como simbolo
-    position++;                                  //Avance para o proximo caractere
-    return;                                      //Finaliza a funcao
+  if (hasMoreTokens()) {
+    currentTokenIndex++;                                                  //Avança para o próximo token
   }
+}                                                                         //Avança para o próximo token, se houver mais tokens
 
-  //NUMEROS
-  if(isdigit(c)){                    //Se o caractere atual for um digito
-    while (position < input_code.length() && isdigit(input_code[position])){
-      currentToken += input_code[position]; 
-      position++;
-    }                                //Enquanto ainda tiver caracteres a serem lidos e for um digito, adicione ao token atual e avance.
-    currentTokenType = INT_CONST;    //Define o tipo de token atual como inteiro
-    return;                          //Finaliza a funcao
+//CONTAINER MARK: TOKENTYPE
+TokenType2 JackTokenizer::tokenType() const {
+  if (currentTokenIndex < tokens.size()) {
+    return tokens[currentTokenIndex].type;                                //Retorna o tipo do token atual
   }
+  return NONE;                                                            //Se não houver mais tokens, retorna NONE
+}                                                                         //Retorna o tipo do token atual se houver mais tokens
 
-  //STRING
-  if (c == '"'){                        //Se o caractere atual for uma aspas duplas
-    position++;                         //Avance para o proximo caractere
-    while (position < input_code.length() && input_code[position] != '"'){
-      currentToken += input_code[position]; 
-      position++;
-    }                                   //Enquanto ainda tiver caracteres a serem lidos e nao for uma aspas duplas, adicione ao token atual e avance.
-    position++;                         //Avance para o proximo caractere
-    currentTokenType = STRING_CONST;    //Define o tipo de token atual como string
-    return;                             //Finaliza a funcao
+//CONTAINER MARK: GETTOKEN
+std::string JackTokenizer::getToken() const {
+  if (currentTokenIndex < tokens.size()) {
+    return tokens[currentTokenIndex].lexeme;                             //Retorna o texto do token atual
   }
+  return "";                                                             //Se não houver mais tokens, retorna uma string vazia
+}                                                                        //Retorna o texto do token atual se houver mais tokens  
 
-  //IDENTIFICADORES E KEYWORDS
-  if (isalpha(c) || c == '_'){            //Se o caractere atual for uma letra ou underline
-
-    //Identificadores
-    while(position < input_code.length() && (isalnum(input_code[position]) || input_code[position] == '_')){
-      currentToken += input_code[position]; 
-      position++;
-    }    //enquanto ainda tiver caracteres a serem lidos e for uma letra ou underline, adicione ao token atual e avance.
-
-    //keywords
-    std::string keywords[] = {
-      "class",
-      "constructor",
-      "function",
-      "method",
-      "field",
-      "static",
-      "var",
-      "int",
-      "char",
-      "boolean",
-      "void",
-      "true",
-      "false",
-      "null",
-      "this",
-      "let",
-      "do",
-      "if",
-      "else",
-      "while",
-      "return", 
-    };
-
-    currentTokenType = IDENTIFIER;       //Define o tipo de token atual como identificador
-    for(const std::string& kw : keywords){
-      if(currentToken == kw){
-        currentTokenType = KEYWORD;       //Se o token atual for uma keyword, define o tipo de token atual como keyword
-        break;
-      }
-    } //veifica se o token atual é uma das palavras dentro da lista de palavras-chave 
-    
-    return; //Achou o token, sai da função
+//CONTAINER MARK: PEEK
+Token JackTokenizer::peek() const {
+  if (currentTokenIndex + 1 < tokens.size()) {
+    return tokens[currentTokenIndex + 1];                                 //Retorna o token seguinte ao atual
   }
-  //Temporario para não ficar em looping
-  position++;
-  advance();  //Evita caracteres indesejados
+  return {NONE, ""};                                                      //Se não houver mais tokens, retorna um token vazio
 }
 
-void JackTokenizer::removeComments(){
-  std::string cleaned_code = "";
-  bool inBlockComment = false; //Memória para saber se estamos dentro de um comentário de bloco /* . . . */
+//CONTAINER MARK: ISKEYWORD
+bool JackTokenizer::isKeyword(const std::string& lexeme) {
+  static const std::vector<std::string> keywords = {
+    "class", "constructor", "function", "method", "field", "static",
+    "var", "int", "char", "boolean", "void", "true", "false",
+    "null", "this", "let", "do", "if", "else", "while", "return"
+  };
+  return std::find(keywords.begin(), keywords.end(), lexeme) != keywords.end();
+}                                                                        //Verifica se o texto do token é uma keyword, comparando com a lista de keywords pré-definida e retorna true se for uma keyword e false caso contrário;
 
-  for (size_t i = 0; i < input_code.length(); i++) { 
-    // Comentário de blocos 
-    if (!inBlockComment && input_code[i] == '/' && i + 1 < input_code.length() && input_code[i + 1] == '*'){
-      inBlockComment = true;
-      i++; //Pulamos o asterisco
-      continue;
-    }  //Se não estamos em um comentário de blocos e o caractere atual for uma barra e o caractere seguinte for um asterisco, então iniciamos um comentario de blocos, e avancemos para o proximo caracteree continuamos o loop.
+//CONTAINER MARK: TOKENIZE
+void JackTokenizer::tokenize(const std::string& sourceCode) {
+  size_t i = 0;                                                         //Índice para percorrer o código fonte
+  size_t length = sourceCode.length();                                  //Comprimento do código fonte
 
-    if (inBlockComment && input_code[i] == '*' && i + 1 < input_code.length() && input_code[i + 1] == '/'){
-      inBlockComment = false;
-      i++; //Pulamos a barra
+  while (i < length) {
+    char ch = sourceCode[i];                                            //Armazena o caractere atual
+
+
+    //SUBITEM RETIRA ESPAÇO EM BRANCO
+    if (std::isspace(ch)) {
+      i++;
       continue;
+    }                                                                   //Ignora espaços em branco, quebras de linha e tabs
+
+    //SUBITEM RETIRA COMENTÁRIOS
+    if (ch == '/') {
+
+      if ( i + 1 < length && sourceCode[i + 1] == '/') {
+        i += 2;
+        while (i < length && sourceCode[i] != '\n' && sourceCode[i] != '\r'){
+          i++;
+        }
+        continue;
+      }                                                                 //Se achar um '/' e o próximo caractere for outro '/' e não for o fim do código, ele passa pra frente da segunda linha e enquanto o caractere atual for diferente de '\n' e '\r', ele continua entendendo como comentário, ou seja, ignora tudo até o final da linha.  Serve para comentários do tipo '// ...'  
+      
+      else if (i + 1 < length && sourceCode[i + 1] == '*') {
+        i += 2;
+        while (i + 1 < length && !(sourceCode[i] == '*' && sourceCode[i + 1] == '/')) {
+          i++;
+        }
+        i += 2;                                                         //Pula o '*/'
+        continue;
+      }                                                                 //Se achar um '/' e o próximo caractere for '*', ele passa pra frente do '*' e enquanto o caractere atual for diferente de '*' seguido de '/', ele continua entendendo como comentário, ou seja, ignora tudo até achar o '*/'. Serve para comentários do tipo '/* ... */'
     }
 
-    //Se estamos dentro de um bloco, ignora a letra atual e vai pra próxima
-    if (inBlockComment) continue;
+    //SUBITEM IDENTIFICAÇÃO DE SÍMBOLOS
+    std::string symbols = "{}()[].,;+-*/&|<>=~";
+    if (symbols.find(ch) != std::string::npos) {
+      std::string lexeme(1, ch);                                       //Cria uma string com o símbolo atual
+      tokens.push_back({SYMBOL, lexeme});                              //adiciona ao vetor de tokens como tokentype SYMBOL E O lexame o simbolo no caractere atual
+      i++;
+      continue;
+    }                                                                  //Se o caractere atual for um simbolo em symbols,  ele adiciona o token na lista de token com tipo de token SYMBOL e o lexame o caractere atual e depois avança e recomeça o loop
 
-    //Comentário de linha (//)
-    if (input_code[i] == '/' && i + 1 < input_code.length() && input_code[i + 1] == '/'){
-      while(i < input_code.length() && input_code[i] != '\n'){
+    //SUBITEM IDENTIFICAÇÃO DE STRINGS
+    if (ch == '"') {
+      std::string lexeme = "";
+      i++;
+      while (i < length && sourceCode[i] != '"')
+      {
+        lexeme += sourceCode[i];
         i++;
       }
-
-      cleaned_code += '\n';  //Ao achar a quebra de linha, mantemos para o cód não grudar
+      i++;
+      tokens.push_back({STRING_CONST, lexeme});
       continue;
-    }
+    }                                                                  //Se o caractere atual for uma aspas, cria-se um lexeme vazio e avança para o próximo caractere. Enquanto o caractere atual não for o final da string e não for outra aspas, o caractere atual é adicionado ao lexeme. Quando chegar nas aspas, o token é adicionado à lista de tokens com tipo STRING_CONST e o lexame é o conteúdo da string, ou seja, o texto entre as aspas. Depois avança e recomeça o loop
 
-    cleaned_code += input_code[i];
-  } //vai de zero até o tamanho do input_code que é o tamanho do arquivo, então vai percorrer ele todo
+    //SUBITEM IDENTIFICAÇÃO DE NÚMEROS
+    if (std::isdigit(ch)) {
+      std::string lexeme = "";
+      while (i < length && std::isdigit(sourceCode[i])){
+        lexeme += sourceCode[i];
+        i++;
+      }
+      tokens.push_back({INT_CONST, lexeme});
+      continue;
+    }                                                                  //Se o caractere atual for um dígito, cria-se um lexeme vazio. Enquanto o caractere atual for um dígito, ele é adicionado ao lexeme. Quando chegar em um caractere que não seja um dígito, o token é adicionado à lista de tokens com tipo INT_CONST e o lexame é o número inteiro lido. Depois recomeça o loop
 
-  input_code = cleaned_code; //Substitui o código sujo pelo código limpo. 
+    //SUBITEM IDENTIFICAÇÃO DE IDENTIFICADORES
+    if (std::isalpha(ch) || ch == '_') {
+      std::string lexeme = "";
+      while (i < length && (std::isalnum(sourceCode[i]) || sourceCode[i] == '_')) {
+        lexeme += sourceCode[i];
+        i++;
+      }
+      if (isKeyword(lexeme)) {
+        tokens.push_back({KEYWORD, lexeme});
+      } else {
+        tokens.push_back({IDENTIFIER, lexeme});
+      }
+      continue;
+    }                                                                  //Se o caractere atual for uma letra ou um underscore, cria-se um lexeme vazio. Enquanto o caractere atual for uma letra, um digito ou um underscore, ele é adicionado ao lexeme. Quando chegar em um caractere diferente, geralmente espaço ou simbolo, o token é verificado se esta na lista de keywords, se estiver, o token é adicionado à lista de tokens com tipo KEYWORD e o lexame é o texto lido. Se não estiver, o token é adicionado à lista de tokens com tipo IDENTIFIER e o lexame é o texto lido. Depois recomeça o loop
+
+    i++;
+  }
 }
 
-//Função de teste
-std::string JackTokenizer::getCode(){return input_code;}           //Retorna o conteudo do arquivo
-TokenTypeList JackTokenizer::tokenType(){return currentTokenType;} //Retorna o tipo de token atual
-std::string JackTokenizer::getToken(){return currentToken;}        //Retorna o token atual
+//CONTAINER MARK: GENERATETOKENXML7
+void JackTokenizer::generateTokenXML(const std::string& outputFilename) const {
+  std::ofstream outFile(outputFilename);
+  std::string space = " ";
+  if (!outFile.is_open()) {
+    return;
+  }
 
+  outFile << "<tokens>\n";
+  
+  for (const auto& token : tokens) {
+    std::string tagName;
+    std::string value = token.lexeme;
+
+    switch (token.type) {
+      case KEYWORD:
+        tagName = "keyword";
+        break;
+      case SYMBOL:
+        tagName = "symbol";
+        if (value == "<") value = "&lt;";
+        else if (value == ">") value = "&gt;";
+        else if (value == "&") value = "&amp;";
+        break;
+      case IDENTIFIER:
+        tagName = "identifier";
+        break;
+      case INT_CONST:
+        tagName = "integerConstant";
+        break;
+      case STRING_CONST:
+        tagName = "stringConstant";
+        break;
+      default:
+        continue;
+    }
+
+    
+
+
+    outFile << "<" << tagName << "> " << value << " </" << tagName << ">\n";
+  }
+  outFile << "</tokens>\n";
+  
+}
