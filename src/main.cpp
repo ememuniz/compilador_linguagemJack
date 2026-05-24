@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <filesystem>
@@ -6,21 +7,21 @@
 #include "CompilationEngine.h"
 
 namespace fs = std::filesystem;
+
 //CONTAINER MARK: COMPILAR FICHEIRO
 void compilarFicheiro(const std::string& caminhoJack) {
-  fs::path p(caminhoJack);                                              // Cria um objeto path a partir do caminho do arquivo .jack
+  fs::path p(caminhoJack);                                     // Cria um objeto path a partir do caminho do arquivo .jack
   fs::path caminhoVm = p.parent_path() / (p.stem().string() + ".vm");   // Cria um caminho para o arquivo .vm,  se caminhoJack for "results/teste.Jack", caminhoVm será "results/teste.vm"
 
   std::cout << "A processar: " << p.filename().string() << " -> " << caminhoVm.filename().string() << std::endl;
   
   try
   {
-    // [Integração Futura]: Aqui vamos instanciar o Tokenizer e a Engine
-    // Por agora, deixamos estruturado para validar a leitura de pastas.
-        
-    // JackTokenizer tokenizer(caminhoJack);
-    // CompilationEngine engine(tokenizer, caminhoVm.string());
-    // engine.compileClass();
+    JackTokenizer tokenizer(caminhoJack);
+
+    CompilationEngine engine(tokenizer, caminhoVm.string());
+
+    engine.compileClass();
   }
   catch(const std::exception& e)
   {

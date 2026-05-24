@@ -4,16 +4,34 @@
 //CONTAINER MARK: CONSTRUTOR
 CompilationEngine::CompilationEngine(JackTokenizer& tokenizer, const std::string& outputFilename)
   : tokenizer(tokenizer), indent("") {
-  outFile.open(outputFilename);
+  
+  // CORREÇÃO: Mudamos o nome do arquivo XML para evitar que ele dispute/sobrescreva o arquivo do VMWriter
+  std::string xmlFilename = outputFilename.substr(0, outputFilename.find_last_of('.')) + ".xml";
+  outFile.open(xmlFilename); 
+  
   if (!outFile.is_open()) {
-    std::cerr << "Erro ao abrir o arquivo de saída: " << outputFilename << std::endl;
+    std::cerr << "Erro ao abrir o arquivo de saída XML: " << xmlFilename << std::endl;
   }
+  
+  // Inicializa o VMWriter com o arquivo original (geralmente terminado em .vm)
+  vmWriter = std::make_unique<VMWriter>(outputFilename); 
 }
 
 //CONTAINER MARK: DESTRUTOR
 CompilationEngine::~CompilationEngine() {
   if (outFile.is_open()) {
     outFile.close();
+  }
+}
+
+//CONTAINER MARK: kindToSegment
+static Segment kindToSegment(Kind kind) {
+  switch (kind) {
+    case Kind::STATIC: return Segment::STATIC;
+    case Kind::FIELD:  return Segment::THIS;
+    case Kind::ARG:    return Segment::ARGUMENT;
+    case Kind::LOCAL:  return Segment::LOCAL;
+    default:           return Segment::CONSTANT;
   }
 }
 
@@ -38,11 +56,11 @@ void CompilationEngine::process(TokenType2 expectedType){
     std::string value = escapeXml(tokenizer.getToken());
 
     switch(expectedType){
-      case TokenType2::KEYWORD:             tagName = "keyword"; break;
-      case TokenType2::SYMBOL:              tagName = "symbol"; break;
-      case TokenType2::IDENTIFIER:          tagName = "identifier"; break;
-      case TokenType2::INT_CONST:           tagName = "integerConstant"; break;
-      case TokenType2::STRING_CONST:        tagName = "stringConstant"; break;
+      case TokenType2::KEYWORD:     tagName = "keyword"; break;
+      case TokenType2::SYMBOL:      tagName = "symbol"; break;
+      case TokenType2::IDENTIFIER:  tagName = "identifier"; break;
+      case TokenType2::INT_CONST:   tagName = "integerConstant"; break;
+      case TokenType2::STRING_CONST:tagName = "stringConstant"; break;
       default: break;
     }
 
@@ -76,345 +94,572 @@ void CompilationEngine::processKeyword(const std::string& expectedKeyword){
 
 //SUBITEM MARK: COMPILE CLASS
 void CompilationEngine::compileClass() {
-  writeXML("<class>");
-  indent += "  ";                                     // Aumenta a identação
+  writeXML("<class>");                                //CODXML
+  indent += "  ";                                     //CODXML Aumenta a identação
 
-  processKeyword("class");                            // Lê "class"
-  process(TokenType2::IDENTIFIER);                    // Lê o nome da classe (identificador)
+  processKeyword("class");                            // Lê "class"
+  className = tokenizer.getToken();                   // Armazena o nome da classe para uso futuro
+  process(TokenType2::IDENTIFIER);                    // Lê o nome da classe (identificador)
 
-  processSymbol("{");                                 // Lê "{"
+  processSymbol("{");                                 // Lê "{"
 
   while (tokenizer.tokenType() == TokenType2::KEYWORD && (tokenizer.getToken() == "static" || tokenizer.getToken() == "field"))
   {
     compileClassVarDec();
-  }                                                   // Lê variaveis de classe, se houver
+  }                                                   // Lê variaveis de classe, se houver
 
   while (tokenizer.tokenType() == TokenType2::KEYWORD && (tokenizer.getToken() == "constructor" || tokenizer.getToken() == "function" || tokenizer.getToken() == "method"))
   {
     compileSubroutine();
   }                                                   // Le subrotinas (construtores, funções e métodos), se houver
 
-  processSymbol("}");                                 // Lê "}" para finalizar a classe
+  processSymbol("}");                                 // Lê "}" para finalizar a classe
 
-  indent.erase(indent.length() - 2);                  // Diminui a identação
-  writeXML("</class>");
+  indent.erase(indent.length() - 2);                  //CODXML Diminui a identação
+  writeXML("</class>");                               //CODXML
 }
+
 //SUBITEM MARK: COMPILE CLASSVARDEC
 void CompilationEngine::compileClassVarDec() {
-  writeXML("<classVarDec>");
-  indent += "  ";                                     // Aumenta a identação
+  writeXML("<classVarDec>");                          //CODXML
+  indent += "  ";                                     //CODXML Aumenta a identação
 
-  process(TokenType2::KEYWORD);                       // Lê "static" ou "field"
+  //NOTE lê o tipo de variavel - static ou field
+  std::string varKind = tokenizer.getToken();         
+  Kind kind = (varKind == "static") ? Kind::STATIC : Kind::FIELD;  
+  process(TokenType2::KEYWORD);                       // Lê "static" ou "field"
 
+  //NOTE lê o tipo de dado da variavel - int, boolean, char ou nome de classe
+  std::string type = tokenizer.getToken();            
   if (tokenizer.tokenType() == TokenType2::KEYWORD) {
-    process(TokenType2::KEYWORD);                     // Lê "int", "boolean" ou "char"
+    process(TokenType2::KEYWORD);                     // Lê "int", "boolean" ou "char"
   } else {
-    process(TokenType2::IDENTIFIER);                  // ou o nome de uma classe pra indicar que que ta declarando uma instancia da classe 
+    process(TokenType2::IDENTIFIER);                  // ou o nome de uma classe
   }
 
-  process(TokenType2::IDENTIFIER);                     // Lê o nome da variavel ou da instância da classe
+  //NOTE lê o nome da variavel e insere na tabela de simbolos
+  std::string name = tokenizer.getToken();            
+  process(TokenType2::IDENTIFIER);                    // Lê o nome da variavel
+  symbolTable.define(name, type, kind);               // Define a variável na tabela de símbolos
 
+  //NOTE Se houver mais variáveis na mesma linha, continua lendo, todas separadas por vírgula
   while (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == ",") {
-    processSymbol(",");                               // Lê ","
-    process(TokenType2::IDENTIFIER);                   // Lê o nome da próxima variável
-  }                                                   // Se houver mais variáveis, continua lendo, todas separadas por vírgula
+    processSymbol(",");                               // Lê ","
+    name = tokenizer.getToken();                      // Armazena o nome da próxima variável
+    process(TokenType2::IDENTIFIER);                  // Lê o nome da próxima variável
+    symbolTable.define(name, type, kind);             // Define a variável na tabela de símbolos
+  }                                                   
 
-  processSymbol(";");                                 // Lê ";"
+  processSymbol(";");                                 // Lê ";"
 
-  indent.erase(indent.length() - 2);                  // Diminui a identação
-  writeXML("</classVarDec>");
+  indent.erase(indent.length() - 2);                  //CODXML Diminui a identação
+  writeXML("</classVarDec>");                         //CODXML
 }
+
 //SUBITEM MARK: COMPILE SUBROUTINE
 void CompilationEngine::compileSubroutine() {
-  writeXML("<subroutineDec>");
-  indent += "  ";                                   // Aumenta a identação
+  writeXML("<subroutineDec>");                      //CODXML
+  indent += "  ";                                   //CODXML Aumenta a identação
 
-  process(TokenType2::KEYWORD);                     // Lê "constructor", "function" ou "method"
+  symbolTable.startSubroutine();                    
 
-  if (tokenizer.tokenType() == TokenType2::KEYWORD) {
-      process(TokenType2::KEYWORD);                 // Lê "void", "int", "boolean", "char" 
-  } else {
-      process(TokenType2::IDENTIFIER);              // ou o nome de uma classe para indicar o tipo de retorno da subrotina
+  //NOTE lê o tipo da subrotina - constructor, function ou method
+  std::string keyword = tokenizer.getToken();       
+  process(TokenType2::KEYWORD);                     // Lê "constructor", "function" ou "method"
+
+  //NOTE lê o this como primeiro argumento implícito para métodos
+  if (keyword == "method") {
+    symbolTable.define("this", className, Kind::ARG);
   }
 
-  process(TokenType2::IDENTIFIER);                  // Lê o nome da subrotina
+  //NOTE lê o tipo de retorno da subrotina
+  if (tokenizer.tokenType() == TokenType2::KEYWORD) {
+      process(TokenType2::KEYWORD);                 // Lê "void", "int", "boolean", "char" 
+  } else {
+      process(TokenType2::IDENTIFIER);              // ou o nome de uma classe
+  }
 
-  processSymbol("(");                               // Lê "("    
-  compileParameterList();                           // Compila a lista de parâmetros, mesmo que esteja vazia
-  processSymbol(")");                               // Lê ")" para finalizar a lista de parâmetros   
+  //NOTE lê o nome da subrotina e insere na tabela de simbolos
+  std::string subroutineName = tokenizer.getToken();
+  process(TokenType2::IDENTIFIER);                  // Lê o nome da subrotina
 
-  compileSubroutineBody();                          // Compila o corpo da subrotina
+  processSymbol("(");                               // Lê "("    
+  compileParameterList();                           // Compila a lista de parâmetros
+  processSymbol(")");                               // Lê ")"    
 
-  indent.erase(indent.length() - 2);                // Diminui a identação
-  writeXML("</subroutineDec>");
+  //NOTE compila o corpo da subrotina passando o nome da subrotina e o tipo de retorno
+  compileSubroutineBody(subroutineName, keyword);   
+
+  indent.erase(indent.length() - 2);                //CODXML Diminui a identação
+  writeXML("</subroutineDec>");                     //CODXML
 }
+
 //SUBITEM MARK: COMPILE PARAMETER LIST
 void CompilationEngine::compileParameterList() {
-  writeXML("<parameterList>");
-  indent += "  ";
+  writeXML("<parameterList>");                      //CODXML
+  indent += "  ";                                   //CODXML
 
-  // Se o próximo token não for ')', significa que a lista não está vazia
   if (!(tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == ")")) {
+    //NOTE lê o tipo ou o nome da classe do primeiro parâmetro
+    std::string type = tokenizer.getToken();               
+    if (tokenizer.tokenType() == TokenType2::KEYWORD) {
+        process(TokenType2::KEYWORD);                      
+    } else {
+        process(TokenType2::IDENTIFIER);                   
+    }
 
-      if (tokenizer.tokenType() == TokenType2::KEYWORD) {
-          process(TokenType2::KEYWORD);                      // Primeiro parâmetro: Tipo
-      } else {
-          process(TokenType2::IDENTIFIER);                   // Primeiro parâmetro: Classe
-      }
-      
-      process(TokenType2::IDENTIFIER);                       // Primeiro parâmetro: Nome
+    //NOTE lê o nome do parâmetro
+    std::string name = tokenizer.getToken();               
+    process(TokenType2::IDENTIFIER);                       
+    symbolTable.define(name, type, Kind::ARG);             
 
-      // Outros parâmetros separados por vírgula
-      while (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == ",") {
-          processSymbol(",");
-          // Próximo tipo
-          if (tokenizer.tokenType() == TokenType2::KEYWORD) {
-              process(TokenType2::KEYWORD);
-          } else {
-              process(TokenType2::IDENTIFIER);
-          }
-          // Próximo nome
-          process(TokenType2::IDENTIFIER);
-      }
+    //NOTE Outros parâmetros separados por vírgula
+    while (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == ",") {
+        processSymbol(",");
+        //NOTE Próximo tipo
+        type = tokenizer.getToken();
+        if (tokenizer.tokenType() == TokenType2::KEYWORD) {
+            process(TokenType2::KEYWORD);
+        } else {
+            process(TokenType2::IDENTIFIER);
+        }
+
+        //NOTE Próximo nome
+        name = tokenizer.getToken();
+        process(TokenType2::IDENTIFIER);
+        symbolTable.define(name, type, Kind::ARG);           
+    }
   }
 
-  indent.erase(indent.length() - 2);
-  writeXML("</parameterList>");
+  indent.erase(indent.length() - 2);                         //CODXML
+  writeXML("</parameterList>");                              //CODXML
 }
+
 //SUBITEM MARK: COMPILE SUBROUTINE BODY
-void CompilationEngine::compileSubroutineBody() {
-  writeXML("<subroutineBody>");
-  indent += "  ";
+void CompilationEngine::compileSubroutineBody(const std::string& subroutineName, const std::string& keyword) {
+  writeXML("<subroutineBody>");                              //CODXML
+  indent += "  ";                                            //CODXML
 
   processSymbol("{");                                       // Abre chaves 
 
-  // Processa todas as declarações de variáveis locais 'var' se houverem
+  //NOTE Processa todas as declarações de variáveis locais 'var'
   while (tokenizer.tokenType() == TokenType2::KEYWORD && tokenizer.getToken() == "var") {
       compileVarDec();
   }
 
-  // Processa os comandos (statements)
+  //NOTE Agora os varDec terminaram, então a tabela sabe o número exato de variáveis locais
+  int nLocals = symbolTable.varCount(Kind::LOCAL);          
+  vmWriter->writeFunction(className + "." + subroutineName, nLocals);     
+  
+  if(keyword == "constructor"){
+    int nFields = symbolTable.varCount(Kind::FIELD);        
+    vmWriter->writePush(Segment::CONSTANT, nFields);        
+    vmWriter->writeCall("Memory.alloc", 1);                 
+    vmWriter->writePop(Segment::POINTER, 0);                     
+  }
+  else if (keyword == "method") {
+    vmWriter->writePush(Segment::ARGUMENT, 0);              
+    vmWriter->writePop(Segment::POINTER, 0);                
+  }
+
+  //NOTE Processa os comandos (statements)
   compileStatements();
 
   // Fecha chaves
   processSymbol("}");
 
-  indent.erase(indent.length() - 2);
-  writeXML("</subroutineBody>");
+  indent.erase(indent.length() - 2);                         //CODXML
+  writeXML("</subroutineBody>");                             //CODXML
 }
+
 //SUBITEM MARK: COMPILE VAR DEC
 void CompilationEngine::compileVarDec() {
-  writeXML("<varDec>");
-  indent += "  ";
+  writeXML("<varDec>");                                      //CODXML
+  indent += "  ";                                            //CODXML
 
+  processKeyword("var");                        
   
-  processKeyword("var");                        // Processa a palavra-chave 'var'
-
-  // 2. Processa o Tipo ('int', 'char', 'boolean' ou nome de classe)
+  //NOTE Processa o Tipo
+  std::string type = tokenizer.getToken();      
   if (tokenizer.tokenType() == TokenType2::KEYWORD) {
-      process(TokenType2::KEYWORD);             // Processa tipos primitivos
+      process(TokenType2::KEYWORD);             
   } else {
-      process(TokenType2::IDENTIFIER);          // ou um objeto de classe
+      process(TokenType2::IDENTIFIER);          
   }
 
-  process(TokenType2::IDENTIFIER);              // Processa o primeiro nome da variável
+  //NOTE lê o nome da variável e insere na tabela de simbolos
+  std::string name = tokenizer.getToken();      
+  process(TokenType2::IDENTIFIER);              
+  symbolTable.define(name, type, Kind::LOCAL);  
 
-  // 4. Se houver mais variáveis na mesma linha separadas por vírgula: (',' varName)*
+  //NOTE Se houver mais variáveis na mesma linha separadas por vírgula
   while (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == ",") {
       processSymbol(",");
+      name = tokenizer.getToken();
       process(TokenType2::IDENTIFIER);
+      symbolTable.define(name, type, Kind::LOCAL);
   }
-
-  // 5. Fecha com ponto e vírgula
+  // Fecha com ponto e vírgula
   processSymbol(";");
 
-  indent.erase(indent.length() - 2);
-  writeXML("</varDec>");
-
+  indent.erase(indent.length() - 2);                 //CODXML
+  writeXML("</varDec>");                             //CODXML
 }
+
 //SUBITEM MARK: COMPILE STATEMENTS
 void CompilationEngine::compileStatements() {
   writeXML("<statements>");
   indent += "  ";
 
-  // Enquanto o próximo token for uma palavra-chave de comando, continuamos processando
   while (tokenizer.tokenType() == TokenType2::KEYWORD) {
       std::string cmd = tokenizer.getToken();
       
       if (cmd == "let") {
-          compileLet();                              // Compila uma declaração de atribuição
+          compileLet();                              
       } else if (cmd == "do") {
-          compileDo();                               // Compila uma declaração de chamada de subrotina
+          compileDo();                               
       } else if (cmd == "if") {
-          compileIf();                               // Compila uma declaração de if
+          compileIf();                               
       } else if (cmd == "while") {
-          compileWhile();                            // Compila uma declaração de while
+          compileWhile();                            
       } else if (cmd == "return") {
-          compileReturn();                           // Compila uma declaração de return
+          compileReturn();                           
       } else {
-          break; // Se for outra palavra-chave (como 'var' ou '}'), sai do loop
+          break; 
       }
   }
 
   indent.erase(indent.length() - 2);
   writeXML("</statements>");
 }
+
 //SUBITEM MARK: COMPILE LET
 void CompilationEngine::compileLet() {
-  writeXML("<letStatement>");
-  indent += "  ";
+  writeXML("<letStatement>");                             //CODXML
+  indent += "  ";                                         //CODXML
   processKeyword("let");
+
+  std::string name = tokenizer.getToken();
   process(TokenType2::IDENTIFIER);
 
+  Kind kind = symbolTable.kindOf(name);
+  int idx = symbolTable.indexOf(name);
+  bool isArray = false;
+
+  // --- TRATAMENTO SE FOR UM VETOR: let arr[i] = ... ---
   if (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == "[") {
+      isArray = true;
       processSymbol("[");
+      
+      vmWriter->writePush(kindToSegment(kind), idx);
       compileExpression();
       processSymbol("]");
+
+      vmWriter->writeArithmetic(Command::ADD);
   }
 
   processSymbol("=");
-  compileExpression();
+
+  // --- AVALIA A EXPRESSÃO DA DIREITA ---
+  compileExpression(); 
   processSymbol(";");
-  indent.erase(indent.length() - 2);
-  writeXML("</letStatement>");
+
+  // --- DESCARREGA O VALOR NA MEMÓRIA ---
+  if (isArray) {
+      vmWriter->writePop(Segment::TEMP, 0);    
+      vmWriter->writePop(Segment::POINTER, 1); 
+      vmWriter->writePush(Segment::TEMP, 0);   
+      vmWriter->writePop(Segment::THAT, 0);    
+  } else {
+      if (kind != Kind::NONE) {
+          vmWriter->writePop(kindToSegment(kind), idx);
+      }
+  }
+  indent.erase(indent.length() - 2);               //CODXML
+  writeXML("</letStatement>");                     //CODXML
 }
+
 //SUBITEM MARK: COMPILE IF
 void CompilationEngine::compileIf() {
-  writeXML("<ifStatement>");
-  indent += "  ";
+  writeXML("<ifStatement>");                       //CODXML
+  indent += "  ";                                  //CODXML
+  int labelNum = labelIndex++; 
+  std::string labelFalse = "IF_FALSE" + std::to_string(labelNum);
+  std::string labelEnd = "IF_END" + std::to_string(labelNum);
+
   processKeyword("if");
+  
   processSymbol("(");
-  compileExpression();
+  compileExpression(); 
   processSymbol(")");
+
+  vmWriter->writeArithmetic(Command::NOT);
+  vmWriter->writeIf(labelFalse);
+
   processSymbol("{");
-  compileStatements();
+  compileStatements(); 
   processSymbol("}");
+  
+  vmWriter->writeGoto(labelEnd);
+  vmWriter->writeLabel(labelFalse);
 
   if (tokenizer.tokenType() == TokenType2::KEYWORD && tokenizer.getToken() == "else") {
       processKeyword("else");
       processSymbol("{");
-      compileStatements();
+      compileStatements(); 
       processSymbol("}");
   }
-  indent.erase(indent.length() - 2);
-  writeXML("</ifStatement>");
+
+  vmWriter->writeLabel(labelEnd);
+  indent.erase(indent.length() - 2);               //CODXML
+  writeXML("</ifStatement>");                      //CODXML
 }
+
 //SUBITEM MARK: COMPILE WHILE
 void CompilationEngine::compileWhile() {
-  writeXML("<whileStatement>");
-  indent += "  ";
+  writeXML("<whileStatement>");           //CODXML
+  indent += "  ";                         //CODXML
+  int labelNum = labelIndex++; 
+  std::string labelExp = "WHILE_EXP" + std::to_string(labelNum);
+  std::string labelEnd = "WHILE_END" + std::to_string(labelNum);
+
   processKeyword("while");
+  vmWriter->writeLabel(labelExp);
+
   processSymbol("(");
-  compileExpression();
+  compileExpression(); 
   processSymbol(")");
+
+  vmWriter->writeArithmetic(Command::NOT);
+  vmWriter->writeIf(labelEnd); 
+
   processSymbol("{");
-  compileStatements();
+  compileStatements(); 
   processSymbol("}");
-  indent.erase(indent.length() - 2);
-  writeXML("</whileStatement>");
+
+  vmWriter->writeGoto(labelExp);
+  vmWriter->writeLabel(labelEnd);
+  
+  indent.erase(indent.length() - 2);      //CODXML
+  writeXML("</whileStatement>");          //CODXML
 }
+
 //SUBITEM MARK: COMPILE DO
 void CompilationEngine::compileDo() {
-  writeXML("<doStatement>");
-  indent += "  ";
+  writeXML("<doStatement>");                //CODXML
+  indent += "  ";                           //CODXML
   processKeyword("do");
-  
-  process(TokenType2::IDENTIFIER); // Nome da função ou classe/objeto
+    
+  std::string name = tokenizer.getToken();
+  process(TokenType2::IDENTIFIER);
+
+  int nArgs = 0;
+  std::string fullName = "";
+
   if (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == ".") {
       processSymbol(".");
+      std::string subName = tokenizer.getToken();
       process(TokenType2::IDENTIFIER);
+
+      Kind kind = symbolTable.kindOf(name);
+      if (kind != Kind::NONE) {
+          vmWriter->writePush(kindToSegment(kind), symbolTable.indexOf(name));
+          nArgs = 1;
+          fullName = symbolTable.typeOf(name) + "." + subName;
+      } else {
+          fullName = name + "." + subName;
+      }
+  } 
+  else {
+      vmWriter->writePush(Segment::POINTER, 0);
+      nArgs = 1;
+      fullName = className + "." + name;
   }
-  
+
   processSymbol("(");
-  compileExpressionList();
+  nArgs += compileExpressionList2(); 
   processSymbol(")");
   processSymbol(";");
 
-  indent.erase(indent.length() - 2);
-  writeXML("</doStatement>");
+  vmWriter->writeCall(fullName, nArgs);
+  vmWriter->writePop(Segment::TEMP, 0);
+
+  indent.erase(indent.length() - 2);         //CODXML
+  writeXML("</doStatement>");                //CODXML
 }
+
 //SUBITEM MARK: COMPILE RETURN
 void CompilationEngine::compileReturn() {
-  writeXML("<returnStatement>");
-  indent += "  ";
+  writeXML("<returnStatement>");               //CODXML
+  indent += "  ";                              //CODXML
 
-  // 1. Processa a palavra-chave 'return'
   processKeyword("return");
 
-  // 2. Se o próximo token NÃO for ';', significa que há uma expressão de retorno (ex: return i;)
   if (!(tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == ";")) {
-      compileExpression();
+    compileExpression();
+  } else {
+    vmWriter->writePush(Segment::CONSTANT, 0);
   }
 
-  // 3. Processa o ponto e vírgula ';'
   processSymbol(";");
+  vmWriter->writeReturn();
 
-  indent.erase(indent.length() - 2);
-  writeXML("</returnStatement>");
+  indent.erase(indent.length() - 2);           //CODXML
+  writeXML("</returnStatement>");              //CODXML
 }
+
 //SUBITEM MARK: COMPILE EXPRESSION
 void CompilationEngine::compileExpression() {
-  writeXML("<expression>");
-  indent += "  ";
+  writeXML("<expression>");                               //CODXML
+  indent += "  ";                                         //CODXML
   compileTerm();
-
   while (tokenizer.tokenType() == TokenType2::SYMBOL && 
         (tokenizer.getToken() == "+" || tokenizer.getToken() == "-" || 
           tokenizer.getToken() == "*" || tokenizer.getToken() == "/" ||
           tokenizer.getToken() == "&" || tokenizer.getToken() == "|" ||
           tokenizer.getToken() == "<" || tokenizer.getToken() == ">" ||
           tokenizer.getToken() == "=")) {
+      std::string op = tokenizer.getToken();
       process(TokenType2::SYMBOL);
       compileTerm();
+
+      if (op == "+") vmWriter->writeArithmetic(Command::ADD);
+      else if (op == "-") vmWriter->writeArithmetic(Command::SUB);
+      else if (op == "=") vmWriter->writeArithmetic(Command::EQ);
+      else if (op == ">") vmWriter->writeArithmetic(Command::GT);
+      else if (op == "<") vmWriter->writeArithmetic(Command::LT);
+      else if (op == "&") vmWriter->writeArithmetic(Command::AND);
+      else if (op == "|") vmWriter->writeArithmetic(Command::OR);
+      else if (op == "*") vmWriter->writeCall("Math.multiply", 2);
+      else if (op == "/") vmWriter->writeCall("Math.divide", 2); 
   }
 
-  indent.erase(indent.length() - 2);
-  writeXML("</expression>");
+  indent.erase(indent.length() - 2);                                   //CODXML
+  writeXML("</expression>");                                           //CODXML
 }
+
 //SUBITEM MARK: COMPILE TERM
 void CompilationEngine::compileTerm() {
-  writeXML("<term>");
-  indent += "  ";
-
+  writeXML("<term>");                         //CODXML               
+  indent += "  ";                             //CODXML
+  
+  //NOTE cenário 1: constante
   if (tokenizer.tokenType() == TokenType2::INT_CONST) {
-      process(TokenType2::INT_CONST);
-  } else if (tokenizer.tokenType() == TokenType2::STRING_CONST) {
-      process(TokenType2::STRING_CONST);
-  } else if (tokenizer.tokenType() == TokenType2::KEYWORD && 
+    int val = std::stoi(tokenizer.getToken());                      
+    vmWriter->writePush(Segment::CONSTANT, val);
+    process(TokenType2::INT_CONST);
+  } 
+  //NOTE cenário 2: constante de texto / string
+  else if (tokenizer.tokenType() == TokenType2::STRING_CONST) {
+    std::string str = tokenizer.getToken();
+    process(TokenType2::STRING_CONST);
+
+    vmWriter->writePush(Segment::CONSTANT, str.length());
+    vmWriter->writeCall("String.new", 1);
+    for (char c : str) {
+      vmWriter->writePush(Segment::CONSTANT, static_cast<int>(c));  
+      vmWriter->writeCall("String.appendChar", 2);
+    }
+  } 
+  //NOTE cenário 3: Palavras-chave especiais -> true, false, null, this
+  else if (tokenizer.tokenType() == TokenType2::KEYWORD && 
             (tokenizer.getToken() == "true" || tokenizer.getToken() == "false" || 
               tokenizer.getToken() == "null" || tokenizer.getToken() == "this")) {
+      std::string kw = tokenizer.getToken();
       process(TokenType2::KEYWORD);
-  } else if (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == "(") {
+      if (kw == "false" || kw == "null") vmWriter->writePush(Segment::CONSTANT, 0);
+      else if (kw == "true") {
+        vmWriter->writePush(Segment::CONSTANT, 0);
+        vmWriter->writeArithmetic(Command::NOT);      
+      }
+      // CORREÇÃO: Removido o writePop que limpava e destruía o endereço do objeto atual
+      else if (kw == "this") {
+        vmWriter->writePush(Segment::POINTER, 0);      
+      }
+  } 
+  //NOTE cenário 4: Expressão entre parênteses
+  else if (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == "(") {
       processSymbol("(");
-      compileExpression();
+      compileExpression(); 
       processSymbol(")");
-  } else if (tokenizer.tokenType() == TokenType2::SYMBOL && 
+  } 
+  //NOTE cenário 5: Operador unário
+  else if (tokenizer.tokenType() == TokenType2::SYMBOL && 
             (tokenizer.getToken() == "-" || tokenizer.getToken() == "~")) {
+      std::string unaryOp = tokenizer.getToken();
       process(TokenType2::SYMBOL);
       compileTerm();
-  } else if (tokenizer.tokenType() == TokenType2::IDENTIFIER) {
+
+      if (unaryOp == "-") vmWriter->writeArithmetic(Command::NEG);
+      else if (unaryOp == "~") vmWriter->writeArithmetic(Command::NOT);
+  } 
+  //NOTE cenário 6: Identificador
+  else if (tokenizer.tokenType() == TokenType2::IDENTIFIER) {
+    std::string name = tokenizer.getToken();
+    process(TokenType2::IDENTIFIER);
+
+    //NOTE cenário 6.1: É um acesso a Vetor/Array 
+    if (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == "[") {
+      processSymbol("[");
+
+      Kind kind = symbolTable.kindOf(name);
+      int idx = symbolTable.indexOf(name);
+      vmWriter->writePush(kindToSegment(kind), idx);
+
+      compileExpression();
+      processSymbol("]");
+      
+      vmWriter->writeArithmetic(Command::ADD);                  
+      vmWriter->writePop(Segment::POINTER, 1);                  
+      vmWriter->writePush(Segment::THAT, 0);                    
+    } 
+
+    //NOTE cenário 6.2: é um acesso a Função externa / Método de objeto
+    else if (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == ".") {
+      processSymbol(".");
+      std::string subName = tokenizer.getToken();
       process(TokenType2::IDENTIFIER);
 
-      if (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == "[") {
-          processSymbol("[");
-          compileExpression();
-          processSymbol("]");
-      } else if (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == ".") {
-          processSymbol(".");
-          process(TokenType2::IDENTIFIER);
-          processSymbol("(");
-          compileExpressionList();
-          processSymbol(")");
-      } else if (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == "(") {
-          processSymbol("(");
-          compileExpressionList();
-          processSymbol(")");
+      processSymbol("(");
+
+      int nArgs = 0;
+      Kind kind = symbolTable.kindOf(name);
+
+      // CORREÇÃO: A lógica correta aqui deve verificar se o identificador NÃO é estático (!= Kind::NONE)
+      if (kind != Kind::NONE) {
+        vmWriter->writePush(kindToSegment(kind), symbolTable.indexOf(name));
+        nArgs = 1;
+        name = symbolTable.typeOf(name);
       }
+
+      nArgs += compileExpressionList2();
+      processSymbol(")");
+
+      vmWriter->writeCall(name + "." + subName, nArgs);
+    } 
+    //NOTE cenário 6.3: Função/Method local da própria classe
+    else if (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == "(") {
+      processSymbol("(");
+      vmWriter->writePush(Segment::POINTER, 0);
+      int nArgs = 1 + compileExpressionList2();
+      processSymbol(")");
+
+      vmWriter->writeCall(className + "." + name, nArgs);
+    }
+    //NOTE cenário 6.4: É apenas uma variável simples
+    else {
+      Kind kind = symbolTable.kindOf(name);
+      int idx = symbolTable.indexOf(name);
+      if (kind != Kind::NONE) {
+        vmWriter->writePush(kindToSegment(kind), idx);
+      }
+    }
   }
 
-  indent.erase(indent.length() - 2);
-  writeXML("</term>");
+  indent.erase(indent.length() - 2);                                   //CODXML
+  writeXML("</term>");                                                 //CODXML
 }
+
 //SUBITEM MARK: COMPILE EXPRESSION LIST
 void CompilationEngine::compileExpressionList() {
   writeXML("<expressionList>");
@@ -430,4 +675,19 @@ void CompilationEngine::compileExpressionList() {
 
   indent.erase(indent.length() - 2);
   writeXML("</expressionList>");
+}
+
+//SUBITEM MARK: COMPILE EXPRESSION LIST 2
+int CompilationEngine::compileExpressionList2() {
+  int count = 0;
+  if (!(tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == ")")) {
+      compileExpression();
+      count++;
+      while (tokenizer.tokenType() == TokenType2::SYMBOL && tokenizer.getToken() == ",") {
+          processSymbol(",");
+          compileExpression();
+          count++;
+      }
+  }
+  return count;
 }

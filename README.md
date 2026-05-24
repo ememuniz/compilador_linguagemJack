@@ -4,12 +4,12 @@ Autor: Emerson Paulo Pinheiro Muniz
 Matrícula: 20250013523
 
 ## 💻 Sobre o Projeto
-Este projeto é a implementação do Front-End completo do compilador para a linguagem Jack, correspondente às etapas de Análise Léxica e Análise Sintática da disciplina de Compiladores do curso de Engenharia da Computação da Universidade Federal do Maranhão (UFMA).
+Este projeto é a implementação do Front-End completo do compilador para a linguagem Jack, correspondente às etapas de Análise Léxica,Análise Sintática e Geração de código intermediário da disciplina de Compiladores do curso de Engenharia da Computação da Universidade Federal do Maranhão (UFMA).
 
-O processo é dividido em duas grandes engrenagens principais:
+O processo é dividido em três grandes engrenagens principais:
 
 ### 1. Analisador Léxico (`JackTokenizer`)
-O objetivo desta etapa é ler arquivos de código-fonte (`.jack`), ignorar ruídos (como espaços em branco, quebras de linha e comentários) e extrair os tokens da linguagem, classificando-os semanticamente em cinco categorias fundamentais:
+O objetivo desta etapa é ler arquivos de código-fonte (`.jack`), ignorar ruídos (como espaços em branco, quebras de linha e comentários) e extrair os tokens da linguagem, classificando-os semantic  amente em cinco categorias fundamentais:
 
 `<keyword>` (Palavras-chave, ex: `class`, `if`)
 
@@ -36,16 +36,22 @@ Expressões Matemáticas/Lógicas: `<expression>`, `<term>` (operandos, que pode
 
 O resultado desta etapa é salvo em um arquivo com o sufixo `*P.xml`.
 
+### 3. Gerador de Código Intermediário (`CodeWriter`)
+Esta é a etapa de Back-End do compilador. Em vez de gerar apenas XML, o compilador agora traduz a lógica da linguagem Jack para a linguagem intermediária da máquina virtual (VM) do Nand2Tetris baseada em pilha. Para isso, utiliza dois componentes vitais:
+
+* **Tabela de Símbolos (`SymbolTable`):** Gerencia o escopo e o tempo de vida das variáveis. Ela lembra se uma variável é um campo da classe (`FIELD`), estática (`STATIC`), local da função (`LOCAL`) ou um argumento (`ARG`), e atribui um índice numérico a cada uma.
+* **Escritor VM (`VMWriter`):** Recebe os comandos traduzidos pela `CompilationEngine` e escreve as instruções finais (ex: `push constant 5`, `call Math.multiply 2`, `pop local 0`).
+
+O resultado final desta etapa é salvo em um arquivo com o sufixo `.vm`, pronto para ser executado no VM Emulator.
+
 ## 📁 Estrutura de Pastas
 Para manter a organização do código (padrão profissional em C++), o projeto está estruturado da seguinte forma:
 
-`/src`: Contém os códigos-fonte (`.cpp`).
-
-`/include`: Contém os cabeçalhos das classes (`.h`).
-
-`/gabarito`: Contém os arquivos XML originais fornecidos pelo curso Nand2Tetris para validação.
-
-Raiz do projeto: Arquivos de teste da linguagem (`.jack`) e executáveis.
+* `/src`: Contém os códigos-fonte (`.cpp`).
+* `/include`: Contém os cabeçalhos das classes (`.h`).
+* `/gabarito`: Contém os arquivos originais (XML ou VM) fornecidos pelo curso Nand2Tetris para validação.
+* `/tests`: Contém os arquivos de código para os testes automatizados.
+* `/results`: contém os arquivos de testes para o gerador de códigos intermediários vm proposto pelo curso Nand2Tetris.
 
 ## 🚀 Execução Principal (`main.cpp`)
 O programa principal é responsável por ler o arquivo `.jack` na pasta raiz e gerar ambos os arquivos XML (Léxico e Sintático).
@@ -54,27 +60,33 @@ Como Compilar e Executar
 ### 1. Compilação:
 No terminal, dentro da raiz do projeto, execute:
 ```Bash
-g++ src/main.cpp src/JackTokenizer.cpp src/CompilationEngine.cpp -Iinclude -o JackAnalyzer
+ g++ -std=c++17 src/main.cpp -Iinclude -o JackCompiler.exe 
 ```
 
 (A flag `-Iinclude` avisa ao compilador para procurar os arquivos `.h` dentro da pasta `include`)
 
-### 2. Execução (exemplo com o arquivo `Main.jack`):
-Para rodar o analisador, passe o nome do arquivo .jack que você deseja traduzir como argumento.
+### 2. Execução:
+Para rodar o analisador, passe o nome do diretorio que você deseja traduzir como argumento.
 
 No Windows:
 ```DOS
-.\JackAnalyzer.exe Main.jack
+.\JackCompiler.exe ./results/pong
 ```
 No Linux/Mac:
 ```Bash
-./JackAnalyzer Main.jack
+.\JackCompiler ./results/pong
 ```
 Saída Esperada no Terminal:
 
 ```Plaintext
-Sucesso! Arquivo lexico gerado: MainT.xml
-Sucesso! Arquivo sintatico gerado: MainP.xml
+Total de ficheiros encontrados: 4
+
+A processar: Ball.jack -> Ball.vm
+A processar: Bat.jack -> Bat.vm
+A processar: Main.jack -> Main.vm
+A processar: PongGame.jack -> PongGame.vm
+
+Processamento de lote concluido!
 ```
 ## 🧪 Estrutura de Testes Automatizados
 Este projeto utiliza o framework doctest para garantir a confiabilidade do código.
@@ -107,16 +119,18 @@ Saída Esperada no Terminal:
 [doctest] Status: SUCCESS!
 ```
 ### 2. Testes de Unidade Internos 
-Verifica as "engrenagens" internas da classe JackTokenizer, testando se ela consegue avançar corretamente pelos caracteres, pular comentários isolados e ignorar espaços brancos.
+Verifica as "engrenagens" internas da classe JackTokenizer, testando se ela consegue avançar corretamente pelos caracteres, pular comentários isolados e ignorar espaços brancos. Também testa se o VMWritter e a tabela de simbolos está funcionando perfeitamente 
 
 Bash
 # Compilação
 ```
 g++ -Iinclude .\tests\test_parser.cpp .\src\JackTokenizer.cpp .\src\CompilationEngine.cpp -o TesteParser
 g++ -Iinclude .\tests\test_scanner.cpp .\src\JackTokenizer.cpp .\src\CompilationEngine.cpp -o TesteScanner
+g++ tests/test_vmwriter.cpp src/VMWriter.cpp src/SymbolTable.cpp  -Iinclude -o TesteVM.exe
 ```
 # Execução
 ```
 .\TesteParser.exe 
 .\TesteScanner.exe
+.\TesteVM.exe
 ```
